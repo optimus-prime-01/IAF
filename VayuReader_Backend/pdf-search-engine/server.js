@@ -1,8 +1,8 @@
-require('dotenv').config();
+// server.js - Simple Express server for Acronym Finder API
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
-const pdfRoutes = require('./routes/pdfRoutes');
+// const acronymRoutes = require('./route');
+const route = require('./routes/pdfRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,19 +11,34 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
-
-// Routes
-app.use('/api/pdfs', pdfRoutes);
-
-// Root route
+// Welcome route
 app.get('/', (req, res) => {
-  res.json({ message: 'PDF Search Engine API' });
+  res.json({
+    message: 'Welcome to Acronym Finder API',
+    endpoints: [
+      'GET /api/acronyms - Get all acronyms',
+      'GET /api/find/:acronym - Find specific acronym',
+      'POST /api/acronyms - Add new acronym'
+    ],
+    example: 'GET /api/find/IAS'
+  });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// API Routes
+app.use('/api', acronymRoutes);
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Endpoint not found'
+  });
 });
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🔍 Acronym Finder API running on http://localhost:${PORT}`);
+  console.log(`Try: http://localhost:${PORT}/api/find/IAS`);
+});
+
+module.exports = app;
