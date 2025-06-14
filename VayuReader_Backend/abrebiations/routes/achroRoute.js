@@ -2,7 +2,7 @@ const express = require("express");
 const Abbreviation = require("../models/achro");
 const router = express.Router();
 
-// POST /api/abbreviations - Add a new abbreviation and its full form
+// POST /api/abbreviations 
 router.post("/", async (req, res) => {
   try {
     const { abbreviation, fullForm } = req.body;
@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// GET /api/abbreviations/:abbr - Get abbreviation and its full form by abbreviation (case-insensitive)
+// GET /api/abbreviations/:abbr 
 router.get("/:abbr", async (req, res) => {
   try {
     const abbr = req.params.abbr;
