@@ -102,6 +102,20 @@ VayuReader/
    cd VayuReader_Frontend
    npm install
    npm start
+   npx expo start --clear
+
+   After running the command, the Expo CLI will start the Metro Bundler in your terminal or browser.
+
+  Press s in the terminal to switch to Expo Go mode.
+
+  A QR code will be displayed.
+
+  Open the Expo Go app on your Android or iOS device.
+
+  Scan the QR code to launch the app on your phone.
+
+  ⚠️ Make sure your phone and computer are connected to the same Wi-Fi network. This ensures QR scanning works properly.
+
    ```
 
 4. **Admin Dashboard Setup**
