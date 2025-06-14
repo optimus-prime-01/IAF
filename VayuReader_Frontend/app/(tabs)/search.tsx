@@ -8,6 +8,7 @@ import {
   FlatList,
   Image,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -107,24 +108,25 @@ const DictionaryScreen = () => {
   const renderItem = ({ item }: { item: WordObj }) => {
     const meaning = item.meanings?.[0]?.definition ?? 'No definition';
     return (
-      <View
-        className="bg-[#1A1A40] rounded-xl p-4 mb-4"
-        onTouchEnd={() =>
-          router.push({
-            pathname: '/word/[word]',
-            params: {
-              word: item.word,
-              definition: meaning,
-              pos: item.meanings?.[0]?.partOfSpeech,
-              examples: JSON.stringify(item.meanings?.[0]?.examples || []),
-              synonyms: item.synonyms?.join(', ') || '',
-            },
-          })
-        }
-      >
-        <Text className="text-white text-lg font-bold">{item.word}</Text>
-        <Text className="text-gray-300 text-sm mt-1">{meaning}</Text>
-      </View>
+      <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() =>
+        router.push({
+          pathname: '/word/[word]',
+          params: {
+            word: item.word,
+            definition: meaning,
+            pos: item.meanings?.[0]?.partOfSpeech,
+            examples: JSON.stringify(item.meanings?.[0]?.examples || []),
+            synonyms: item.synonyms?.join(', ') || '',
+          },
+        })
+      }
+      className="bg-[#1A1A40] rounded-xl p-4 mb-4"
+    >
+      <Text className="text-white text-lg font-bold">{item.word}</Text>
+      <Text className="text-gray-300 text-sm mt-1">{meaning}</Text>
+    </TouchableOpacity>
     );
   };
 
