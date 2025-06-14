@@ -1,13 +1,5 @@
 # 🔐 Authentication API
 
-## 🚀 Live Deployment
-
-You can test the live API hosted on Render here:
-
-```
-🔗 https://auth-service-sjhe.onrender.com/api/auth
-```
-
 ## ⚙️ Quick Setup (Local)
 
 ### 1. Clone and Install
@@ -37,7 +29,7 @@ npm start
 
 ### 🔹 1. Signup User
 - **Method:** `POST`
-- **URL (Live):** `https://auth-service-sjhe.onrender.com/api/auth/signup`
+- **URL (Live):** `https://localhost:3000/api/auth/signup`
 - **Headers:** `Content-Type: application/json`
 - **Body:**
 
@@ -52,7 +44,7 @@ npm start
 
 ### 🔹 2. Login User
 - **Method:** `POST`
-- **URL (Live):** `https://auth-service-sjhe.onrender.com/api/auth/login`
+- **URL (Live):** `https://localhost:3000/api/auth/login`
 - **Headers:** `Content-Type: application/json`
 - **Body:**
 
@@ -67,7 +59,7 @@ npm start
 
 ### 🔹 3. Get User Profile
 - **Method:** `GET`
-- **URL (Live):** `https://auth-service-sjhe.onrender.com/api/auth/profile`
+- **URL (Live):** `https://localhost:3000/api/auth/profile`
 - **Headers:**
   - `Content-Type: application/json`
   - `Authorization: Bearer <paste-token-here>`
