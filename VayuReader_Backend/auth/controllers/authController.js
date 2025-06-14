@@ -5,7 +5,6 @@ const signup = async (req, res) => {
   try {
     const { name, officer_id, phone_number, password } = req.body;
 
-    
     const existingUser = await User.findOne({
       $or: [{ phone_number }, { officer_id }]
     });
@@ -46,7 +45,6 @@ const login = async (req, res) => {
   try {
     const { phone_number, password } = req.body;
 
-    // Find user by phone number
     const user = await User.findOne({ phone_number });
     if (!user) {
       return res.status(400).json({
@@ -54,8 +52,7 @@ const login = async (req, res) => {
         message: 'Invalid credentials'
       });
     }
-
-    // Check password
+    
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({
@@ -63,7 +60,6 @@ const login = async (req, res) => {
         message: 'Invalid credentials'
       });
     }
-
     
     const token = generateToken(user._id);
 
