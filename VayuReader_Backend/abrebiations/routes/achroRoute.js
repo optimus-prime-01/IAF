@@ -14,6 +14,16 @@ router.post("/", async (req, res) => {
   }
 });
 
+//GET /api/abbreviations/all
+router.get("/all", async (req, res) => {
+  try {
+    const abbreviations = await Abbreviation.find({});
+    res.json(abbreviations);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/abbreviations/:abbr 
 router.get("/:abbr", async (req, res) => {
   try {
