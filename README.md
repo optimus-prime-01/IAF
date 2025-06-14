@@ -11,7 +11,7 @@ VayuReader is a powerful, multi-module platform designed for seamless PDF docume
 
 ## ✨ Key Features
 
-- 📱 ****Android Mobile App** – Built with React Native (Expo) for Android platform
+- 📱 **Android Mobile App** – Built with React Native (Expo) for Android platform
 - 🔍 **Intelligent PDF Search** - Advanced search engine with full-text indexing
 - 📖 **Dictionary Integration** - Built-in dictionary with synonyms and antonyms  
 - 🔤 **Abbreviation Management** - Comprehensive abbreviation lookup system
