@@ -226,7 +226,7 @@ MAX_FILE_SIZE=10MB
 | `/pdfs`       | GET    | List all available PDFs      |
 | `/pdfs/:id`   | GET    | Get specific PDF details     |
 | `/search`     | GET    | Search PDFs by content       |
-| `/categories` | GET    | Get document categories      |
+
 
 ### Abbreviations API
 
@@ -234,9 +234,6 @@ MAX_FILE_SIZE=10MB
 |---------------------------------|--------|-----------------------------------|
 | `/abbreviations`               | GET    | List all abbreviations            |
 | `/abbreviations`               | POST   | Add new abbreviation              |
-| `/abbreviations/:id`           | PUT    | Update abbreviation               |
-| `/abbreviations/:id`           | DELETE | Delete abbreviation               |
-| `/abbreviations/search`        | GET    | Search abbreviations              |
 | `/refresh`                     | POST   | Refresh JWT token                 |
 
 ### Authentication API
@@ -245,7 +242,7 @@ MAX_FILE_SIZE=10MB
 |------------|--------|--------------------------|
 | `/signup`  | POST   | Register new user        |
 | `/login`   | POST   | User authentication      |
-| `/me`      | GET    | Get current user profile |
+| `/profile` | GET    | Get current user profile |
 
 ### Dictionary API
 
@@ -296,42 +293,17 @@ Response:
 
 ### 🔍 Search Engine
 - Full-text search across PDF content
-- Category-based filtering
 - Advanced query syntax support
 - Search result ranking and relevance
 - Search history and suggestions
 
 ### 📚 Content Management
 - Bulk PDF upload and processing
-- Automatic text extraction and indexing
-- Thumbnail generation
 - Metadata management
-- Category organization
 
 ### 👥 User Management
 - Secure user registration and login
-- Profile customization
-- Reading preferences
 - Access control and permissions
-- Activity tracking
-
----
-
-## 🧪 Testing
-
-```bash
-# Run backend tests
-cd VayuReader_Backend/pdf-search-engine
-npm test
-
-# Run frontend tests
-cd VayuReader_Frontend
-npm test
-
-# Run admin dashboard tests
-cd VayuReader_AdminDashboard/frontend
-npm test
-```
 
 ---
 
@@ -377,12 +349,6 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ---
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
 ## 📞 Support
 
 - 📧 Email: support@vayureader.com
@@ -403,5 +369,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <div align="center">
-  <strong>Built with ❤️ for the learning community</strong>
+  <strong>Built with ❤️ for the Indian AirForce community</strong>
 </div>
