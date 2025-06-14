@@ -15,10 +15,10 @@ const fs = require("fs");
 //   },
 // });
 
-// Custom storage to create a unique folder for each upload
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // Use a unique folder for each upload
+    
     if (!req.folderName) {
       req.folderName = uuidv4();
     }
@@ -67,25 +67,25 @@ router.get("/", async (req, res) => {
 });
 
 // POST /api/pdfs (add PDF metadata, not file)
-router.post("/", async (req, res) => {
-  try {
-    const { title, content, pdfUrl, category, thumbnail } = req.body;
-    const newDocument = new PdfDocument({
-      title,
-      content,
-      pdfUrl,
-      category,
-      thumbnail,
-      viewCount: 0
-    });
-    const savedDocument = await newDocument.save();
-    res.status(201).json(savedDocument);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+// router.post("/", async (req, res) => {
+//   try {
+//     const { title, content, pdfUrl, category, thumbnail } = req.body;
+//     const newDocument = new PdfDocument({
+//       title,
+//       content,
+//       pdfUrl,
+//       category,
+//       thumbnail,
+//       viewCount: 0
+//     });
+//     const savedDocument = await newDocument.save();
+//     res.status(201).json(savedDocument);
+//   } catch (error) {
+//     res.status(400).json({ error: error.message });
+//   }
+// });
 
-// POST /api/pdfs/upload (upload PDF file and optional thumbnail)
+// POST /api/pdfs/upload 
 router.post("/upload", upload.fields([
   { name: "pdf", maxCount: 1 },
   { name: "thumbnail", maxCount: 1 }
