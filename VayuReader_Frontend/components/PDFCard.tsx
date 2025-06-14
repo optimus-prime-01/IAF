@@ -2,25 +2,22 @@ import { Link } from 'expo-router';
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 
-const PDFCard = ({
-  id,
-  title,
-  type,
-  createdAt,
-  thumbnail,
-  cardWidth, // optional prop for horizontal layouts
-}: PDF & { cardWidth?: number }) => {
+const BASE_URL = 'http://192.168.205.128:3001';
+
+const PDFCard = ({ _id, title, createdAt, thumbnail, cardWidth, category }: PDF & { cardWidth?: number }) => {
+  const thumbnailUri = thumbnail ? { uri: `${BASE_URL}${thumbnail}` } :'https://placehold.co/600x800';
+
   return (
     <Link
-      href={{ pathname: "/pdfread/[id]", params: { id: id.toString() } }}
+      href={{ pathname: "/pdfread/[id]", params: { id: _id.toString() } }}
       asChild
     >
       <TouchableOpacity
         className="mx-1"
-        style={{ width: cardWidth ?? "30%" }} // fallback to 30% for grid
+        style={{ width: cardWidth ?? "30%" }}
       >
         <Image
-          source={thumbnail}
+          source={thumbnailUri}
           className="w-full h-52 rounded-lg"
           resizeMode="cover"
         />
@@ -39,7 +36,7 @@ const PDFCard = ({
             className="text-xs font-medium text-light-300 uppercase mr-2"
             numberOfLines={1}
           >
-            {type}
+            {category}
           </Text>
         </View>
       </TouchableOpacity>
@@ -47,5 +44,4 @@ const PDFCard = ({
   );
 };
 
-
-export default PDFCard
+export default PDFCard;

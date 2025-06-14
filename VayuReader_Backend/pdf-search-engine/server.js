@@ -1,4 +1,5 @@
 require("dotenv").config();
+const path    = require('path');
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -18,7 +19,7 @@ mongoose
 
 
 app.use("/api/pdfs", pdfRoutes);
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, 'uploads')));
 
 
 app.get("/", (req, res) => {

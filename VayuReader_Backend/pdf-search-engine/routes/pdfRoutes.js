@@ -99,8 +99,10 @@ router.post("/upload", upload.fields([
       return res.status(400).json({ message: "PDF file is required" });
     }
 
-    const pdfUrl = `/uploads/${pdfFile.filename}`;
-    const thumbnail = thumbnailFile ? `/uploads/${thumbnailFile.filename}` : undefined;
+    const pdfUrl = `/${pdfFile.path.replace(/\\/g, "/")}`;
+const thumbnail = thumbnailFile ? `/${thumbnailFile.path.replace(/\\/g, "/")}` : undefined;
+    // Converting the pdfUrl in the form /uploads/<subfolder>/<uuid>.pdf
+
 
     const newDoc = new PdfDocument({
       title,

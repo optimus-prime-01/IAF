@@ -1,9 +1,10 @@
 interface PDF {
-  id: string;
+  _id: string;
   title: string;
-  type:string;
-  createdAt:string;
-  file:any;
-  thumbnail:any;
+  createdAt: string;
+  thumbnail: any;
+  pdfUrl: string;
+  viewCount: number;
+  category:string;
 }
 
