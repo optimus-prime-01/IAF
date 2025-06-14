@@ -1,6 +1,6 @@
 # Dictionary API
 
-A simple REST API for storing and retrieving dictionary data using Node.js, Express, and MongoDB.
+A  REST API for storing and retrieving dictionary data using Node.js, Express, and MongoDB.
 
 ## Features
 
@@ -14,7 +14,7 @@ A simple REST API for storing and retrieving dictionary data using Node.js, Expr
 - Node.js (v14 or higher)
 - MongoDB (local installation or MongoDB Atlas)
 
-### Installation
+### Installation (for local development)
 
 1. **Clone or create the project directory**
    ```bash
@@ -29,7 +29,9 @@ A simple REST API for storing and retrieving dictionary data using Node.js, Expr
 
 3. **Set up environment variables**
    - Create a `.env` file in the root directory
-   - Add your MongoDB connection string:
+   - Add your MongoDB connection string and port as shown below:
+
+   #### Example `.env` file structure:
    ```
    MONGODB_URI=mongodb://localhost:27017/dictionary
    PORT=3000
@@ -43,21 +45,24 @@ A simple REST API for storing and retrieving dictionary data using Node.js, Expr
    ```bash
    # Development mode with auto-restart
    npm run dev
-   
+
    # Production mode
    npm start
    ```
 
 ## API Usage
 
+All endpoints are available at the deployed URL:  
+**https://dictionary-service-k9cu.onrender.com**
+
 ### 1. Upload Dictionary Data
 
-**Endpoint:** `POST /api/dictionary/upload`
+**Endpoint:** `POST https://dictionary-service-k9cu.onrender.com/api/dictionary/upload`
 
 **Request Body:** JSON object with dictionary data
 
 ```bash
-curl -X POST http://localhost:3000/api/dictionary/upload \
+curl -X POST https://dictionary-service-k9cu.onrender.com/api/dictionary/upload \
   -H "Content-Type: application/json" \
   -d @your-dictionary-file.json
 ```
@@ -76,10 +81,10 @@ curl -X POST http://localhost:3000/api/dictionary/upload \
 
 ### 2. Get Word Meaning
 
-**Endpoint:** `GET /api/dictionary/word/:word`
+**Endpoint:** `GET https://dictionary-service-k9cu.onrender.com/api/dictionary/word/:word`
 
 ```bash
-curl http://localhost:3000/api/dictionary/word/ABANDON
+curl https://dictionary-service-k9cu.onrender.com/api/dictionary/word/ABANDON
 ```
 
 **Response:**
@@ -101,10 +106,10 @@ curl http://localhost:3000/api/dictionary/word/ABANDON
 
 ### 3. Get All Words (Testing)
 
-**Endpoint:** `GET /api/dictionary/words`
+**Endpoint:** `GET https://dictionary-service-k9cu.onrender.com/api/dictionary/words`
 
 ```bash
-curl http://localhost:3000/api/dictionary/words
+curl https://dictionary-service-k9cu.onrender.com/api/dictionary/words
 ```
 
 ## Project Structure
@@ -143,7 +148,7 @@ The API expects dictionary data in the following format:
 
 1. **Health Check**
    ```bash
-   curl http://localhost:3000/health
+   curl https://dictionary-service-k9cu.onrender.com/health
    ```
 
 2. **Upload Sample Data**
@@ -161,11 +166,11 @@ The API expects dictionary data in the following format:
 
 ## Production Deployment
 
+This API is already deployed at:  
+**https://dictionary-service-k9cu.onrender.com**
+
+If you wish to deploy your own instance:
 1. Set up MongoDB Atlas or a production MongoDB instance
 2. Update the `MONGODB_URI` in your environment variables
-3. Deploy to your preferred platform (Heroku, AWS, etc.)
+3. Deploy to your preferred platform (Render, Heroku, AWS, etc.)
 4. Ensure environment variables are set in your deployment platform
-
-## License
-
-MIT
