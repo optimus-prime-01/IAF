@@ -2,12 +2,14 @@
 
 > A comprehensive multi-platform solution for PDF management, document search, and content discovery
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React Native](https://img.shields.io/badge/React%20Native-0.72-blue.svg)](https://reactnative.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0-green.svg)](https://www.mongodb.com/)
+[![Docker](https://img.shields.io/badge/Docker-Container-blue?logo=docker&logoColor=white)](https://www.docker.com/)
 
 VayuReader is a powerful, multi-module platform designed for seamless PDF document management, intelligent search capabilities, and comprehensive content organization. The platform combines a mobile-first approach with robust backend services and an intuitive admin dashboard.
+
+---
 
 ## ✨ Key Features
 
@@ -18,6 +20,8 @@ VayuReader is a powerful, multi-module platform designed for seamless PDF docume
 - 🔐 **Secure Authentication** - JWT-based user authentication and authorization
 - 👨‍💼 **Admin Dashboard** - Web-based content management interface
 - ☁️ **Cloud-Ready** - Scalable microservices architecture
+
+---
 
 ## 🏗️ Architecture Overview
 
@@ -39,6 +43,8 @@ VayuReader is a powerful, multi-module platform designed for seamless PDF docume
                            └─────────────────────┘
 ```
 
+---
+
 ## 📂 Project Structure
 
 ```
@@ -51,7 +57,7 @@ VayuReader/
 │
 ├── 🖥️ VayuReader_Backend/           # Backend Services
 │   ├── pdf-search-engine/           # PDF management & search
-│   ├── abbreviations/               # Abbreviation API
+│   ├── abrebiations/                # Abbreviation API
 │   ├── dictionary-api/              # Dictionary service
 │   ├── auth/                        # Authentication service
 │   └── shared/                      # Common utilities
@@ -62,16 +68,21 @@ VayuReader/
     └── services/                    # Admin API calls
 ```
 
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18.x or higher
-- MongoDB 6.0+
+- MongoDB 6.0+ (or MongoDB Atlas)
 - Expo CLI
 - Git
+- Docker & Docker Compose (for containerized deployment)
 
-### Installation
+---
+
+### Installation (Manual)
 
 1. **Clone the repository**
    ```bash
@@ -104,18 +115,7 @@ VayuReader/
    npm start
    npx expo start --clear
 
-   After running the command, the Expo CLI will start the Metro Bundler in your terminal or browser.
-
-  Press s in the terminal to switch to Expo Go mode.
-
-  A QR code will be displayed.
-
-  Open the Expo Go app on your Android or iOS device.
-
-  Scan the QR code to launch the app on your phone.
-
-  ⚠️ Make sure your phone and computer are connected to the same Wi-Fi network. This ensures QR scanning works properly.
-
+   # Scan the QR code with Expo Go app on your device.
    ```
 
 4. **Admin Dashboard Setup**
@@ -124,6 +124,67 @@ VayuReader/
    npm install
    npm start
    ```
+
+---
+
+### 🐳 Dockerized Backend (Recommended)
+
+#### 1. **Configure Environment Variables**
+
+Create `.env` files in each backend service directory (see `.env.example` for reference).
+
+#### 2. **Build and Run All Backend Services**
+
+From the `VayuReader_Backend` directory:
+
+```bash
+docker-compose up --build
+```
+
+This will build and start all backend services as Docker containers.
+
+#### 3. **Access Services**
+
+- Abbreviations API: [http://localhost:4000/api/abbreviations/all](http://localhost:4000/api/abbreviations/all)
+- PDF Search Engine: [http://localhost:4001/](http://localhost:4001/)
+- Dictionary API: [http://localhost:4002/](http://localhost:4002/)
+- Auth API: [http://localhost:4003/](http://localhost:4003/)
+
+#### 4. **Example `docker-compose.yml`**
+
+```yaml
+version: "3"
+services:
+  abrebiations:
+    build: ./abrebiations
+    ports:
+      - "4000:3000"
+    env_file:
+      - ./abrebiations/.env
+
+  pdf-search-engine:
+    build: ./pdf-search-engine
+    ports:
+      - "4001:3000"
+    env_file:
+      - ./pdf-search-engine/.env
+
+  dictionary-api:
+    build: ./dictionary-api
+    ports:
+      - "4002:3000"
+    env_file:
+      - ./dictionary-api/.env
+
+  auth:
+    build: ./auth
+    ports:
+      - "4003:3000"
+    env_file:
+      - ./auth/.env
+```
+
+---
 
 ## 🔧 Configuration
 
@@ -142,6 +203,8 @@ UPLOAD_PATH=./uploads
 MAX_FILE_SIZE=10MB
 ```
 
+---
+
 ## 📱 Mobile App Features
 
 - **Intuitive PDF Viewer** with zoom, navigation, and bookmarking
@@ -151,36 +214,38 @@ MAX_FILE_SIZE=10MB
 - **Abbreviation Expansion** for technical documents
 - **User Profiles** with reading history and preferences
 
+---
+
 ## 🔌 API Documentation
 
 ### PDF Search Engine
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/upload` | POST | Upload new PDF documents |
-| `/pdfs` | GET | List all available PDFs |
-| `/pdfs/:id` | GET | Get specific PDF details |
-| `/search` | GET | Search PDFs by content |
-| `/categories` | GET | Get document categories |
+| Endpoint      | Method | Description                  |
+|---------------|--------|------------------------------|
+| `/upload`     | POST   | Upload new PDF documents     |
+| `/pdfs`       | GET    | List all available PDFs      |
+| `/pdfs/:id`   | GET    | Get specific PDF details     |
+| `/search`     | GET    | Search PDFs by content       |
+| `/categories` | GET    | Get document categories      |
 
 ### Abbreviations API
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/abbreviations` | GET | List all abbreviations |
-| `/abbreviations` | POST | Add new abbreviation |
-| `/abbreviations/:id` | PUT | Update abbreviation |
-| `/abbreviations/:id` | DELETE | Delete abbreviation |
-| `/abbreviations/search` | GET | Search abbreviations |
-| `/refresh` | POST | Refresh JWT token |
+| Endpoint                       | Method | Description                       |
+|---------------------------------|--------|-----------------------------------|
+| `/abbreviations`               | GET    | List all abbreviations            |
+| `/abbreviations`               | POST   | Add new abbreviation              |
+| `/abbreviations/:id`           | PUT    | Update abbreviation               |
+| `/abbreviations/:id`           | DELETE | Delete abbreviation               |
+| `/abbreviations/search`        | GET    | Search abbreviations              |
+| `/refresh`                     | POST   | Refresh JWT token                 |
 
 ### Authentication API
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/signup` | POST | Register new user |
-| `/login` | POST | User authentication |
-| `/me` | GET | Get current user profile |
+| Endpoint   | Method | Description              |
+|------------|--------|--------------------------|
+| `/signup`  | POST   | Register new user        |
+| `/login`   | POST   | User authentication      |
+| `/me`      | GET    | Get current user profile |
 
 ### Dictionary API
 
@@ -198,6 +263,8 @@ Response:
   }
 }
 ```
+
+---
 
 ## 🛠️ Technology Stack
 
@@ -223,6 +290,8 @@ Response:
 - **React Router** - Client-side routing
 - **Chart.js** - Data visualization
 
+---
+
 ## 📊 Features Breakdown
 
 ### 🔍 Search Engine
@@ -246,6 +315,8 @@ Response:
 - Access control and permissions
 - Activity tracking
 
+---
+
 ## 🧪 Testing
 
 ```bash
@@ -262,20 +333,37 @@ cd VayuReader_AdminDashboard/frontend
 npm test
 ```
 
+---
+
 ## 🚢 Deployment
 
 ### Docker Deployment
 
 ```bash
 # Build and run with Docker Compose
-docker-compose up -d
+cd VayuReader_Backend
+docker-compose up --build
 ```
 
 ### Manual Deployment
 
-1. **Backend Services**: Deploy to your preferred cloud provider (AWS, GCP, Azure)
+1. **Backend Services**: Deploy to your preferred cloud provider (AWS, GCP, Azure, Render, etc.)
 2. **Frontend**: Build and deploy using Expo EAS
 3. **Admin Dashboard**: Deploy to Vercel, Netlify, or similar platform
+
+### Docker Hub
+
+You can also push your backend images to Docker Hub for easy deployment:
+
+```bash
+# Tag and push example for abbreviations service
+docker tag vayureader_backend-abrebiations optimusprime01/abreviations:latest
+docker push optimusprime01/abreviations:latest
+```
+
+Repeat for other services.
+
+---
 
 ## 🤝 Contributing
 
@@ -287,15 +375,21 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+---
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
 
 ## 📞 Support
 
 - 📧 Email: support@vayureader.com
 - 🐛 Issues: [GitHub Issues](https://github.com/yourusername/VayuReader/issues)
 - 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/VayuReader/discussions)
+
+---
 
 ## 🎯 Roadmap
 
