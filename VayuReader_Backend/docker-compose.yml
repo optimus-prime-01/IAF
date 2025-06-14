@@ -1,0 +1,29 @@
+version: "3"
+services:
+  abrebiations:
+    build: ./abrebiations
+    ports:
+      - "4000:3000"
+    env_file:
+      - ./abrebiations/.env
+
+  pdf-search-engine:
+    build: ./pdf-search-engine
+    ports:
+      - "4001:3000"
+    env_file:
+      - ./pdf-search-engine/.env
+
+  dictionary-api:
+    build: ./dictionary-api
+    ports:
+      - "4002:3000"
+    env_file:
+      - ./dictionary-api/.env
+
+  auth:
+    build: ./auth
+    ports:
+      - "4003:3000"
+    env_file:
+      - ./auth/.env
