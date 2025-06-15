@@ -109,14 +109,60 @@ VayuReader/
    ```
 
 3. **Frontend Setup**
-   ```bash
-   cd VayuReader_Frontend
-   npm install
-   npm start
-   npx expo start --clear
+   📋 What You Need Before Starting
+  1. An Android phone
+  2. A laptop or PC where the project is set up
+  3. Make sure both phone and laptop are connected to the same Wi-Fi or hotspot
 
-   # Scan the QR code with Expo Go app on your device.
+  ###  Step-by-Step Instructions (Manual)
+
+  1. **Step 1: Install the App on Your Phone**
+   ```bash
+   a. Open this link on your Android phone:https://expo.dev/accounts/aryaman97/projects/IAF/builds/6f6c305f-38a8-4136-9e43-4da51b6dac02
+   b. Download the file (you may need to allow your browser to download unknown apps)
+   c. Tap the downloaded file and click "Install"
    ```
+
+   2. **Step 2: Start the App from the Laptop (Only needed the first time or after changes)**
+   ```bash
+   
+   a. Open the project folder on your laptop where the app code is (the folder is usually called VayuReader_Frontend)
+   b. Right-click inside the folder and choose “Open Terminal”
+   c. Run the following command in the terminal: npx expo start --dev-client
+
+   ```
+
+   3. **Step 3: Open the App on Your Phone**
+   ```bash
+   Case A: Auto Connect (Recommended)
+   a. You’ll see something like this in the terminal or browser: exp://192.168.205.128:8081
+   b. Now, just open the VayuReader app on your phone.
+   c. If everything works, it will automatically connect and load the app.
+
+  Case B: Manual Connect (If App Doesn't Load Automatically)
+  If the app shows a blank screen or doesn't load anything:
+   a. Ensure the server is still running on your laptop: npx expo start --dev-client
+   b. From the terminal or browser, copy the full connection link. It will look like this: exp+iaf://expo-development-client/?url=http%3A%2F%2F192.168.205.128%3A8081
+  c. Manually enter that link in the App
+
+
+   ```
+  4. **Step 4: What to Do If You Update the Code**
+   ```bash
+   a. No need to reinstall the app
+   b. Just repeat Step 2 (npx expo start --dev-client) on the laptop
+   c. Open the app again on your phone — it will automatically update
+
+   ```
+   5. **Step 5: When to Rebuild the App (for developers)**
+   ```bash
+   You only need to create a new APK if:
+   a. You added native features like PDF viewer
+   b. You want to give the app to someone who doesn't have access to the laptop/local server
+   To rebuild: eas build --platform android --profile development
+
+   ```
+
 
 4. **Admin Dashboard Setup**
    ```bash
