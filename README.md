@@ -2,10 +2,22 @@
 
 > A comprehensive multi-platform solution for PDF management, document search, and content discovery
 
-[![React Native](https://img.shields.io/badge/React%20Native-0.72-blue.svg)](https://reactnative.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)](https://nodejs.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-6.0-green.svg)](https://www.mongodb.com/)
+[![React Native](https://img.shields.io/badge/React%20Native-0.72-blue.svg?logo=react)](https://reactnative.dev/)
+[![Expo](https://img.shields.io/badge/Expo-49.0.0-black.svg?logo=expo)](https://expo.dev/)
+[![NativeWind](https://img.shields.io/badge/NativeWind-Tailwind%20for%20RN-blueviolet)](https://www.nativewind.dev/)
+[![React Navigation](https://img.shields.io/badge/React%20Navigation-v6-blue.svg?logo=react)](https://reactnavigation.org/)
+[![Axios](https://img.shields.io/badge/Axios-HTTP%20Client-5A29E4.svg?logo=axios)](https://axios-http.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg?logo=node.js)](https://nodejs.org/)
+[![Express.js](https://img.shields.io/badge/Express.js-Backend%20Framework-black.svg)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6.0-green.svg?logo=mongodb)](https://www.mongodb.com/)
+[![Mongoose](https://img.shields.io/badge/Mongoose-ODM-880000.svg)](https://mongoosejs.com/)
+[![JWT](https://img.shields.io/badge/JWT-Authentication-orange.svg?logo=jsonwebtokens)](https://jwt.io/)
+[![Multer](https://img.shields.io/badge/Multer-File%20Upload-blue.svg)](https://github.com/expressjs/multer)
+[![bcrypt](https://img.shields.io/badge/bcrypt-Password%20Hashing-yellowgreen)](https://github.com/kelektiv/node.bcrypt.js)
 [![Docker](https://img.shields.io/badge/Docker-Container-blue?logo=docker&logoColor=white)](https://www.docker.com/)
+[![React](https://img.shields.io/badge/React-18.x-61DAFB.svg?logo=react)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC.svg?logo=tailwindcss)](https://tailwindcss.com/)
+[![React Router](https://img.shields.io/badge/React%20Router-v6-critical.svg?logo=reactrouter)](https://reactrouter.com/)
 
 VayuReader is a powerful, multi-module platform designed for seamless PDF document management, intelligent search capabilities, and comprehensive content organization. The platform combines a mobile-first approach with robust backend services and an intuitive admin dashboard.
 
