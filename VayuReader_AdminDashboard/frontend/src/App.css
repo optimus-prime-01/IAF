@@ -27,6 +27,72 @@
 .App-link {
   color: #61dafb;
 }
+.upload-form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.upload-form {
+  background: #fff;
+  padding: 32px 40px;
+  border-radius: 12px;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+  width: 420px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.upload-form h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.upload-form label {
+  display: block;
+  margin-bottom: 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+}
+
+.upload-form input[type="text"],
+.upload-form input[type="file"],
+.upload-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-top: 6px;
+  background-color: #fafafa;
+}
+
+.upload-form textarea {
+  resize: vertical;
+  height: 80px;
+}
+
+.upload-form button {
+  width: 100%;
+  padding: 12px;
+  background-color: #2563eb;
+  border: none;
+  color: white;
+  font-weight: 600;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.3s ease;
+}
+
+.upload-form button:hover {
+  background-color: #1d4ed8;
+}
 
 @keyframes App-logo-spin {
   from {

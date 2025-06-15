@@ -1,77 +1,79 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState } from 'react';
+import './UploadForm.css';
 
 export default function UploadForm() {
-  const [title, setTitle] = useState("");
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '', 
+    category: '',
+    pdfFile: null,
+    thumbnailFile: null,
+  });
 
-  const handleUpload = async (e) => {
+  const [message, setMessage] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'pdfFile' || name === 'thumbnailFile') {
+      setFormData({ ...formData, [name]: files[0] });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return alert("Please select a PDF file.");
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("pdf", file);
+    if (!formData.title || !formData.content || !formData.category || !formData.pdfFile) {
+      setMessage('❌ Please fill in all required fields.');
+      return;
+    }
+
+    const payload = new FormData();
+    payload.append('title', formData.title);
+    payload.append('content', formData.content);
+    payload.append('category', formData.category);
+    payload.append('pdf', formData.pdfFile);
+    if (formData.thumbnailFile) {
+      payload.append('thumbnail', formData.thumbnailFile);
+    }
 
     try {
-      setLoading(true);
-      await axios.post("http://localhost:3001/api/pdfs/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          "x-auth-token": "fake-token-for-now", // Replace with real token later
-        },
+      const res = await fetch('http://localhost:5000/api/pdf/upload', {
+        method: 'POST',
+        body: payload,
       });
-      alert("PDF uploaded successfully!");
-      setTitle("");
-      setFile(null);
+
+      const data = await res.json();
+      setMessage(data.msg || '✅ Upload successful!');
     } catch (err) {
       console.error(err);
-      alert("Failed to upload PDF.");
-    } finally {
-      setLoading(false);
+      setMessage('❌ Upload failed.');
     }
   };
 
   return (
-    <form
-      onSubmit={handleUpload}
-      className="bg-white p-6 rounded shadow max-w-md mx-auto"
-    >
-      <h3 className="text-xl font-semibold mb-4">Upload a PDF</h3>
+    <div className="form-container">
+      <h2>Upload PDF Metadata</h2>
+      <form onSubmit={handleSubmit}>
+        <label>Title<span className="star">*</span></label>
+        <input type="text" name="title" value={formData.title} onChange={handleChange} required />
 
-      <label className="block mb-2 text-sm font-medium text-gray-700">
-        Title
-      </label>
-      <input
-        type="text"
-        placeholder="Enter PDF title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring focus:border-blue-300"
-        required
-      />
+        <label>Content<span className="star">*</span></label>
+        <textarea name="content" value={formData.content} onChange={handleChange} required />
 
-      <label className="block mb-2 text-sm font-medium text-gray-700">
-        Select PDF
-      </label>
-      <input
-        type="file"
-        accept="application/pdf"
-        onChange={(e) => setFile(e.target.files[0])}
-        className="w-full p-2 border border-gray-300 rounded mb-4 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-        required
-      />
+        <label>Category<span className="star">*</span></label>
+        <input type="text" name="category" value={formData.category} onChange={handleChange} required />
 
-      <button
-        type="submit"
-        disabled={loading}
-        className={`w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 ${
-          loading ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-      >
-        {loading ? "Uploading..." : "Upload"}
-      </button>
-    </form>
+        <label>PDF File<span className="star">*</span></label>
+        <input type="file" name="pdfFile" accept="application/pdf" onChange={handleChange} required />
+
+        <label>Thumbnail (optional)</label>
+        <input type="file" name="thumbnailFile" accept="image/*" onChange={handleChange} />
+
+        <button type="submit">Upload</button>
+        {message && <p className="message">{message}</p>}
+      </form>
+    </div>
   );
 }
