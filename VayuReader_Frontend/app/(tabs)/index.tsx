@@ -53,7 +53,7 @@ export default function Index() {
     return allPdfs.filter(p => p.title.toLowerCase().includes(q));
   }, [searchText, allPdfs]);
 
-  // 4) Category‑filtered grid 
+  // 4) Category‑filtered grid (only used when not searching)
   const gridData = useMemo(() => {
     return activeCat === 'All'
       ? allPdfs
@@ -84,7 +84,7 @@ export default function Index() {
     </View>
   );
 
-  
+  // 7) Header component: shows static sections only when NOT searching
   const ListHeader = () => (
     <>
       
