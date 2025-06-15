@@ -57,12 +57,12 @@ All endpoints are available at the deployed URL:
 
 ### 1. Upload Dictionary Data
 
-**Endpoint:** `POST https://dictionary-service-k9cu.onrender.com/api/dictionary/upload`
+**Endpoint:** `POST https://iaf-dictionary.onrender.com/api/dictionary/upload`
 
 **Request Body:** JSON object with dictionary data
 
 ```bash
-curl -X POST https://dictionary-service-k9cu.onrender.com/api/dictionary/upload \
+curl -X POST https://iaf-dictionary.onrender.com/api/dictionary/upload \
   -H "Content-Type: application/json" \
   -d @your-dictionary-file.json
 ```
@@ -81,10 +81,10 @@ curl -X POST https://dictionary-service-k9cu.onrender.com/api/dictionary/upload 
 
 ### 2. Get Word Meaning
 
-**Endpoint:** `GET https://dictionary-service-k9cu.onrender.com/api/dictionary/word/:word`
+**Endpoint:** `GET https://iaf-dictionary.onrender.com/api/dictionary/word/:word`
 
 ```bash
-curl https://dictionary-service-k9cu.onrender.com/api/dictionary/word/ABANDON
+curl https://iaf-dictionary.onrender.com/api/dictionary/word/ABANDON
 ```
 
 **Response:**
@@ -106,10 +106,10 @@ curl https://dictionary-service-k9cu.onrender.com/api/dictionary/word/ABANDON
 
 ### 3. Get All Words (Testing)
 
-**Endpoint:** `GET https://dictionary-service-k9cu.onrender.com/api/dictionary/words`
+**Endpoint:** `GET https://iaf-dictionary.onrender.com/api/dictionary/words`
 
 ```bash
-curl https://dictionary-service-k9cu.onrender.com/api/dictionary/words
+curl https://iaf-dictionary.onrender.com/api/dictionary/words
 ```
 
 ## Project Structure
@@ -148,7 +148,7 @@ The API expects dictionary data in the following format:
 
 1. **Health Check**
    ```bash
-   curl https://dictionary-service-k9cu.onrender.com/health
+   curl https://iaf-dictionary.onrender.com/health
    ```
 
 2. **Upload Sample Data**
@@ -167,7 +167,7 @@ The API expects dictionary data in the following format:
 ## Production Deployment
 
 This API is already deployed at:  
-**https://dictionary-service-k9cu.onrender.com**
+**https://iaf-dictionary.onrender.com**
 
 If you wish to deploy your own instance:
 1. Set up MongoDB Atlas or a production MongoDB instance
