@@ -2,9 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-// import SearchEngine from './components/SearchEngine';
-// import AddDictionary from './components/AddDictionary';
-// import UploadGuide from './components/UploadGuide';
+import AddDictionaryWords from './components/AddDictionaryWords';
 import AddAbbreviations from './components/AddAbbreviations';
 import AddDictionaryWords from './components/AddDictionaryWords';
 import UploadUserGuide from './components/UploadUserGuide';
@@ -21,6 +19,7 @@ export default function App() {
         <Route path="/guide" element={<UploadUserGuide />} />
         <Route path="/abbreviations" element={<AddAbbreviations />} />
 
+        <Route path="/add-dictionary-words" element={<AddDictionaryWords />} />
       </Routes>
     </BrowserRouter>
   );
