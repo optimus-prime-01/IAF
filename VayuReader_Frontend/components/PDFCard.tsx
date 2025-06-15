@@ -6,7 +6,7 @@ const BASE_URL = 'http://192.168.205.128:3001';
 
 const PDFCard = ({ _id, title, createdAt, thumbnail, cardWidth, category }: PDF & { cardWidth?: number }) => {
   const thumbnailUri = thumbnail ? { uri: `${BASE_URL}${thumbnail}` } :'https://placehold.co/600x800';
-
+  
   return (
     <Link
       href={{ pathname: "/pdfread/[id]", params: { id: _id.toString() } }}
