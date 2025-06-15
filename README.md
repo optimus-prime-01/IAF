@@ -255,7 +255,6 @@ MAX_FILE_SIZE=10MB
 
 - **Intuitive PDF Viewer** with zoom, navigation, and bookmarking
 - **Advanced Search** with filters and sorting options
-- **Offline Reading** with downloaded content
 - **Dictionary Integration** for instant word lookup
 - **Abbreviation Expansion** for technical documents
 - **User Profiles** with reading history and preferences
@@ -326,12 +325,12 @@ Response:
 - **JWT** - Authentication tokens
 - **Multer** - File upload handling
 - **bcrypt** - Password hashing
+- **Docker – Containerization for consistent and portable backend deployment
 
 ### Admin Dashboard
 - **React** - UI library
 - **Tailwind CSS** - Utility-first CSS framework
 - **React Router** - Client-side routing
-- **Chart.js** - Data visualization
 
 ---
 
@@ -371,15 +370,7 @@ docker-compose up --build
 
 ### Docker Hub
 
-You can also push your backend images to Docker Hub for easy deployment:
-
-```bash
-# Tag and push example for abbreviations service
-docker tag vayureader_backend-abrebiations optimusprime01/abreviations:latest
-docker push optimusprime01/abreviations:latest
-```
-
-Repeat for other services.
+Images of the backend services has been pushed to docker hub.
 
 ---
 
@@ -398,8 +389,6 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ## 📞 Support
 
 - 📧 Email: support@vayureader.com
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/VayuReader/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/VayuReader/discussions)
 
 ---
 
