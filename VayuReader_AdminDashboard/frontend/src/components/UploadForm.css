@@ -1,54 +1,109 @@
+body {
+/* background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+ */
+ background: linear-gradient(to bottom right, #eff6ff, #bfdbfe);
+padding-left: 1rem;
+padding-right: 1rem;
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+color: black;
+margin: 0;
+padding: 0;
+}
+
 .form-container {
-  width: 500px;
-  margin: auto;
-  background-color: #f1f1f1;
-  padding: 30px;
-  border-radius: 10px;
-  font-family: sans-serif;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+max-width: 500px;
+margin: 60px auto;
+background: #ffffff;
+padding: 30px;
+border-radius: 16px;
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+color: #111;
 }
 
-h2 {
-  text-align: center;
-  margin-bottom: 20px;
+.form-container h2 {
+text-align: center;
+margin-bottom: 25px;
+color: #003c64;
 }
 
-form label {
-  display: block;
-  margin-top: 10px;
-  font-weight: bold;
+label {
+display: block;
+font-weight: 600;
+margin: 12px 0 4px;
 }
 
-input, textarea {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
+input[type="text"],
+textarea,
+input[type="file"] {
+width: 100%;
+padding: 10px;
+border: 1px solid #ccc;
+border-radius: 6px;
+font-size: 14px;
+}
+
+textarea {
+resize: vertical;
 }
 
 button {
-  width: 100%;
-  padding: 10px;
-  background-color: #007bff;
-  border: none;
-  color: white;
-  margin-top: 20px;
-  cursor: pointer;
-  border-radius: 5px;
+background-color: #0066cc;
+color: #fff;
+padding: 12px;
+width: 100%;
+border: none;
+border-radius: 8px;
+font-size: 16px;
+font-weight: 600;
+margin-top: 16px;
+cursor: pointer;
+transition: 0.3s ease;
 }
 
 button:hover {
-  background-color: #0056b3;
-}
-
-.star {
-  color: red;
-  margin-left: 3px;
+background-color: #004c99;
 }
 
 .message {
-  margin-top: 15px;
-  text-align: center;
-  color: green;
+margin-top: 10px;
+font-weight: bold;
+text-align: center;
+}
+
+.preview-card {
+margin-top: 30px;
+padding: 16px;
+background: #f4f8ff;
+border-radius: 10px;
+text-align: center;
+box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.preview-card img {
+max-width: auto;
+height: auto;
+margin-bottom: 10px;
+border: 1px solid #ccc;
+border-radius: 8px;
+}
+
+.preview-card h4 {
+margin: 8px 0 4px;
+color: #003c64;
+}
+
+.preview-card a {
+display: inline-block;
+margin-top: 8px;
+padding: 8px 14px;
+background: #0077cc;
+color: white;
+border-radius: 6px;
+text-decoration: none;
+font-weight: 500;
+transition: 0.3s;
+}
+
+.preview-card a:hover {
+background-color: #005b99;
 }
