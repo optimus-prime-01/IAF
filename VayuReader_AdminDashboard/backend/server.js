@@ -21,7 +21,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use("/api/auth", authRoutes);
 app.use("/api/pdf", pdfRoutes); 
 app.use('/api/abbreviation', require('./routes/abbreviationRoutes'));
-app.use('/api', dictionaryRoutes);
+app.use('/api/dictionary', dictionaryRoutes);
 
 
 mongoose
