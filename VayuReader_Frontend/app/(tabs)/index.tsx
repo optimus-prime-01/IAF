@@ -1,76 +1,90 @@
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { FlatList, Image, Text, View } from "react-native";
+import axios from 'axios';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { FlatList, Image, Text, View } from 'react-native';
 
 import PDFCard from "@/components/PDFCard";
 import SearchBar from "@/components/SearchBar";
 import { icons } from "@/constants/icons";
 import { images } from "@/constants/images";
-import pdfdata from "./../../pdfData";
 
 
-type RenderItemProps = {
-  item: PDF;
-};
-type RenderCategoryItemProps = {
-  item: string;
-};
-
-// Splitting the data for now as backend api are not ready
-const recentData  = pdfdata.slice(0, 5);
-const popularData = pdfdata.slice(5, 10);
-//Fetching the categories from the pdfData
-const categories  = Array.from(new Set(pdfdata.map((p) => p.type)));
+type RenderItemProps = { item: PDF };
+type RenderCategoryItemProps = { item: string };
 
 export default function Index() {
   const router = useRouter();
-  const [activeCat, setActiveCat] = useState<string>("All");
-  const [searchText, setSearchText] = useState("");
+  const [allPdfs, setAllPdfs]     = useState<PDF[]>([]);
+  const [activeCat, setActiveCat] = useState<string>('All');
+  const [searchText, setSearchText] = useState('');
+  const [loading, setLoading]     = useState<boolean>(true);
 
+  // 1) Fetch all PDFs on mount
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const res = await axios.get<PDF[]>('http://192.168.205.128:3001/api/pdfs/all');
+        const withId = res.data.map((doc) => ({
+        ...doc,
+        id: doc._id,        // add `id` field
+      }));
+      setAllPdfs(withId);
+      } catch (err) {
+        console.error('Failed to fetch PDFs:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  }, []);
 
-  // Filter grid by active category
-  const gridData =
-    activeCat === "All"
-      ? pdfdata
-      : pdfdata.filter((p) => p.type === activeCat);
+  // 2) Derive the sections from allPdfs
+  const recentData = [...allPdfs]
+  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  .slice(0, 10);
+  const popularData = allPdfs.slice(0, 10);
+  const categories  = Array.from(new Set(allPdfs.map((p) => p.category)));
 
-  // Horizontal PDF render
-  const renderHorizontal = ({ item }:RenderItemProps) => (
+  // 3) Optionally filter by category (and you can add search filter here too)
+  const gridData = allPdfs.filter((p) => {
+    if (activeCat !== 'All' && p.category !== activeCat) return false;
+    if (searchText && !p.title.toLowerCase().includes(searchText.toLowerCase()))
+      return false;
+    return true;
+  });
+
+  // Render helpers
+  const renderHorizontal = ({ item }: RenderItemProps) => (
     <View style={{ marginRight: 12 }}>
-      <PDFCard {...item} cardWidth={100}/>
+      <PDFCard {...item} cardWidth={100} />
     </View>
   );
 
-  // Category chip render
-  const renderCategory = ({ item }:RenderCategoryItemProps) => (
+  const renderCategory = ({ item }: RenderCategoryItemProps) => (
     <Text
       onPress={() => setActiveCat(item)}
       className={`px-4 py-2 mr-3 rounded-full ${
-        activeCat === item ? "bg-[#5B5FEF]" : "bg-[#1C1B3A]"
+        activeCat === item ? 'bg-[#5B5FEF]' : 'bg-[#1C1B3A]'
       }`}
-      style={{ color: "white" }}
+      style={{ color: 'white' }}
     >
       {item}
     </Text>
   );
 
-  // 3‑column grid render
-  const renderGrid = ({ item }:RenderItemProps) => (
-    <View className="mb-5">
-  <PDFCard {...item} cardWidth={100} />
-  </View>
-  )
+  const renderGrid = ({ item }: RenderItemProps) => (
+    <View className="mb-5 mr-3">
+      <PDFCard {...item}  cardWidth={100} />
+    </View>
+  );
 
   return (
     <View className="flex-1 bg-black">
-      <Image
-        source={images.bg}
-        className="absolute"
-      />
+      <Image source={images.bg} className="absolute " />
 
       <FlatList
         data={gridData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         renderItem={renderGrid}
         numColumns={3}
         showsVerticalScrollIndicator={false}
@@ -78,7 +92,7 @@ export default function Index() {
           paddingBottom: 80,
           paddingHorizontal: 16,
         }}
-        columnWrapperStyle={{ justifyContent: "space-between" }}
+        columnWrapperStyle={{ justifyContent: 'flex-start' }}
         ListHeaderComponent={
           <>
             {/* Logo */}
@@ -92,9 +106,15 @@ export default function Index() {
               <SearchBar
                 placeholder="Search for a PDF"
                 value={searchText}
-  onChangeText={setSearchText}
+                onChangeText={setSearchText}
               />
             </View>
+
+            {loading && (
+              <Text className="text-center text-white mt-4">
+                Loading PDFs…
+              </Text>
+            )}
 
             {/* Recent Uploaded */}
             <Text className="text-white text-lg font-bold mt-8 mb-3 px-2">
@@ -103,7 +123,7 @@ export default function Index() {
             <FlatList
               data={recentData}
               horizontal
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item._id}
               renderItem={renderHorizontal}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingLeft: 0, paddingBottom: 8 }}
@@ -116,7 +136,7 @@ export default function Index() {
             <FlatList
               data={popularData}
               horizontal
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item._id}
               renderItem={renderHorizontal}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingLeft: 0, paddingBottom: 8 }}
@@ -127,7 +147,7 @@ export default function Index() {
               Categories
             </Text>
             <FlatList
-              data={["All", ...categories]}
+              data={['All', ...categories]}
               horizontal
               keyExtractor={(item) => item}
               renderItem={renderCategory}
@@ -137,7 +157,7 @@ export default function Index() {
 
             {/* Grid Section Title */}
             <Text className="text-white text-lg font-bold mt-6 mb-4 px-4">
-              {activeCat === "All" ? "All PDFs" : `${activeCat} PDFs`}
+              {activeCat === 'All' ? 'All PDFs' : `${activeCat} PDFs`}
             </Text>
           </>
         }

@@ -16,7 +16,6 @@
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
     "axios": "^1.9.0",
-    "dotenv": "^16.5.0",
     "expo": "~53.0.10",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.6",
