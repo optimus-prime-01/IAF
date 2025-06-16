@@ -1,218 +1,77 @@
-# Dictionary API
 
-A REST API for storing and retrieving dictionary data using Node.js, Express, and MongoDB.
 
-## Features
+# 📚 Dictionary API
 
-- **POST** `/api/dictionary/upload` - Upload large dictionary JSON data
-- **GET** `/api/dictionary/word/:word` - Get meaning of a specific word
-- **GET** `/api/dictionary/words` - Get list of all words (limited to 100 for testing)
-- **Health Check Endpoints** for all main routes
+A RESTful API to store and retrieve dictionary data using Node.js, Express, and MongoDB.
 
-## Setup Instructions
+### 🚀 Features
 
-### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (local installation or MongoDB Atlas)
+* `POST /api/dictionary/upload` — Upload dictionary JSON data
+* `GET /api/dictionary/word/:word` — Fetch meaning of a word
+* `GET /api/dictionary/words` — Get words
+* Health check routes for monitoring
 
-### Installation (for local development)
+### 🔧 Setup
 
-1. **Clone or create the project directory**
-   ```bash
-   mkdir dictionary-api
-   cd dictionary-api
-   ```
+1. Clone repo and install:
 
-2. **Install dependencies**
    ```bash
    npm install
    ```
+2. Add `.env`:
 
-3. **Set up environment variables**
-   - Create a `.env` file in the root directory
-   - Add your MongoDB connection string and port as shown below:
-
-   #### Example `.env` file structure:
    ```
    MONGODB_URI=mongodb://localhost:27017/dictionary
    PORT=3000
    ```
+3. Run app:
 
-4. **Start MongoDB**
-   - For local MongoDB: `mongod`
-   - For MongoDB Atlas: Use the connection string provided
-
-5. **Run the application**
    ```bash
-   # Development mode with auto-restart
-   npm run dev
-
-   # Production mode
-   npm start
+   npm run dev   # for development
+   npm start     # for production
    ```
 
-## API Usage
-
-All endpoints are available at the deployed URL:  
-**https://dictionary-service-k9cu.onrender.com**
-
-### 1. Upload Dictionary Data
-
-**Endpoint:** `POST https://iaf-dictionary.onrender.com/api/dictionary/upload`
-
-**Request Body:** JSON object with dictionary data
-
-```bash
-curl -X POST https://iaf-dictionary.onrender.com/api/dictionary/upload \
-  -H "Content-Type: application/json" \
-  -d @your-dictionary-file.json
-```
-
-**Response:**
-```json
-{
-  "message": "Dictionary uploaded successfully",
-  "totalWords": 150,
-  "processedWords": 150,
-  "insertedWords": 145,
-  "skippedWords": 0,
-  "duplicatesSkipped": 5
-}
-```
-
-### 2. Get Word Meaning
-
-**Endpoint:** `GET https://iaf-dictionary.onrender.com/api/dictionary/word/:word`
-
-```bash
-curl https://iaf-dictionary.onrender.com/api/dictionary/word/ABANDON
-```
-
-**Response:**
-```json
-{
-  "word": "ABANDON",
-  "meanings": [
-    {
-      "partOfSpeech": "Verb",
-      "definition": "forsake, leave behind",
-      "synonyms": ["Discard", "Fling", "Toss"],
-      "examples": ["We abandoned the old car in the empty parking lot"]
-    }
-  ],
-  "synonyms": ["Abandon", "Desolate", "Vacate", "Desert"],
-  "antonyms": []
-}
-```
-
-### 3. Get All Words (Testing)
-
-**Endpoint:** `GET https://iaf-dictionary.onrender.com/api/dictionary/words`
-
-```bash
-curl https://iaf-dictionary.onrender.com/api/dictionary/words
-```
-
-**Response:**
-```json
-{
-  "total": 100,
-  "words": ["ABANDON", "ABILITY", ...]
-}
-```
-
-## Health Check
-
-The Dictionary API provides health check endpoints for each main route to help you monitor service availability and integration status.
-
-### Health Check Endpoints
-
-| Endpoint                                 | Description                              |
-|-------------------------------------------|------------------------------------------|
-| `GET /api/dictionary/health`              | General health check for the dictionary API |
-| `GET /api/dictionary/health/upload`       | Health check for the upload endpoint      |
-| `GET /api/dictionary/health/word/:word`   | Health check for the word lookup endpoint |
-| `GET /api/dictionary/health/words`        | Health check for the all words endpoint   |
-
-#### Example Usage
-
-```bash
-curl https://iaf-dictionary.onrender.com/api/dictionary/health
-curl https://iaf-dictionary.onrender.com/api/dictionary/health/upload
-curl https://iaf-dictionary.onrender.com/api/dictionary/health/word/ABANDON
-curl https://iaf-dictionary.onrender.com/api/dictionary/health/words
-```
-
-**Sample Response:**
-```json
-{
-  "status": "ok",
-  "route": "GET /api/dictionary/words"
-}
-```
-
-Use these endpoints to verify that each API route is up and responding as expected.  
-They are especially useful for automated monitoring and deployment readiness checks.
-
-## Project Structure
-
-```
-dictionary-api/
-├── package.json          # Dependencies and scripts
-├── server.js             # Main application entry point
-├── .env                  # Environment variables
-├── config/
-│   └── database.js       # Database connection
-├── models/
-│   └── Word.js           # Word schema definition
-├── routes/
-│   └── dictionary.js     # API routes
-└── README.md             # Documentation
-```
-
-## Data Format
-
-The API expects dictionary data in the following format:
+### 📦 Data Format
 
 ```json
 {
   "WORD": {
-    "MEANINGS": [
-      ["PartOfSpeech", "Definition", ["synonym1", "synonym2"], ["example1"]]
-    ],
-    "ANTONYMS": ["antonym1", "antonym2"],
-    "SYNONYMS": ["synonym1", "synonym2"]
+    "MEANINGS": [["Verb", "Definition", ["syn1"], ["example"]]],
+    "ANTONYMS": ["ant1"],
+    "SYNONYMS": ["syn1"]
   }
 }
 ```
 
-## Testing
+### ✅ Endpoints
 
-1. **Health Check**
-   ```bash
-   curl https://iaf-dictionary.onrender.com/api/dictionary/health
-   ```
+* `POST /api/dictionary/upload`
+* `GET /api/dictionary/word/:word`
+* `GET /api/dictionary/words`
+* `GET /api/dictionary/health`
+* `GET /api/dictionary/health/upload`
+* `GET /api/dictionary/health/word/:word`
+* `GET /api/dictionary/health/words`
 
-2. **Upload Sample Data**
-   - Create a small JSON file with dictionary data
-   - Use the POST endpoint to upload it
+### 🧪 Testing
 
-3. **Query a Word**
-   - Use the GET endpoint to retrieve word meanings
+* Use cURL or Postman to test endpoints
+* Upload a sample dictionary JSON
+* Query words and check health endpoints
 
-## Error Handling
+### 🛠 Project Structure
 
-- **400 Bad Request**: Invalid input data
-- **404 Not Found**: Word not found in dictionary
-- **500 Internal Server Error**: Server or database errors
+```
+├── server.js
+├── .env
+├── config/database.js
+├── models/Word.js
+├── routes/dictionary.js
+```
 
-## Production Deployment
+### ⚠️ Errors
 
-This API is already deployed at:  
-**https://iaf-dictionary.onrender.com**
+* `400`: Bad input
+* `404`: Word not found
+* `500`: Server error
 
-If you wish to deploy your own instance:
-1. Set up MongoDB Atlas or a production MongoDB instance
-2. Update the `MONGODB_URI` in your environment variables
-3. Deploy to your preferred platform (Render, Heroku, AWS, etc.)
-4. Ensure environment variables are set in your deployment platform
