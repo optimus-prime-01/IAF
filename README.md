@@ -1,4 +1,7 @@
+
+![Icon](https://github.com/user-attachments/assets/be609a21-1d26-42ce-a1e5-685a6f3531cc)
 # VayuReader 📚
+
 
 > A comprehensive multi-platform solution for PDF management, document search, and content discovery
 
