@@ -2,6 +2,26 @@ const express = require('express');
 const router = express.Router();
 const Word = require('../models/Word');
 
+// Health check for POST /api/dictionary/upload
+router.get('/health/upload', (req, res) => {
+  res.json({ status: 'ok', route: 'POST /api/dictionary/upload' });
+});
+
+// Health check for GET /api/dictionary/word/:word
+router.get('/health/word/:word', (req, res) => {
+  res.json({ status: 'ok', route: `GET /api/dictionary/word/${req.params.word}` });
+});
+
+// Health check for GET /api/dictionary/words
+router.get('/health/words', (req, res) => {
+  res.json({ status: 'ok', route: 'GET /api/dictionary/words' });
+});
+
+// General health check
+router.get('/health', (req, res) => {
+  res.json({ status: 'ok', route: '/api/dictionary' });
+});
+
 router.post('/upload', async (req, res) => {
   try {
     const dictionaryData = req.body;
