@@ -45,6 +45,26 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
+// Health check for GET /api/pdfs
+router.get("/health/search", (req, res) => {
+  res.json({ status: "ok", route: "GET /api/pdfs?search=" });
+});
+
+// Health check for POST /api/pdfs/upload
+router.get("/health/upload", (req, res) => {
+  res.json({ status: "ok", route: "POST /api/pdfs/upload" });
+});
+
+// Health check for GET /api/pdfs/all
+router.get("/health/all", (req, res) => {
+  res.json({ status: "ok", route: "GET /api/pdfs/all" });
+});
+
+// Health check for GET /api/pdfs/:id
+router.get("/health/:id", (req, res) => {
+  res.json({ status: "ok", route: `GET /api/pdfs/${req.params.id}` });
+});
+
 // GET /api/pdfs?search=...
 router.get("/", async (req, res) => {
   try {
