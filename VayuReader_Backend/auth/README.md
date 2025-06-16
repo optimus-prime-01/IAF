@@ -1,121 +1,93 @@
-# 🔐 Authentication API
+# Auth API
 
-## ⚙️ Quick Setup (Local)
+A Node.js/Express authentication API with JWT, validation, and MongoDB.
 
-### 1. Clone and Install
+---
+
+## 🚀 Features
+
+- **User Signup** (`POST /api/auth/signup`)
+- **User Login** (`POST /api/auth/login`)
+- **Get Profile** (`GET /api/auth/profile`, JWT protected)
+- **Health Check Endpoints** for all main routes
+
+---
+
+## 🛣️ Endpoints
+
+| Method | Route                | Description                |
+|--------|----------------------|----------------------------|
+| POST   | `/api/auth/signup`   | Register a new user        |
+| POST   | `/api/auth/login`    | Login and get JWT token    |
+| GET    | `/api/auth/profile`  | Get user profile (protected) |
+
+---
+
+## 🩺 Health Check
+
+The API provides health check endpoints for each main route.
+
+| Endpoint                        | Description                        |
+|----------------------------------|------------------------------------|
+| `GET /api/auth/health`           | General health check               |
+| `GET /api/auth/health/signup`    | Health check for signup endpoint   |
+| `GET /api/auth/health/login`     | Health check for login endpoint    |
+| `GET /api/auth/health/profile`   | Health check for profile endpoint  |
+
+#### Example Usage
 
 ```bash
-git clone <your-repo-url>
-cd auth-system
-npm install
+curl http://localhost:3000/api/auth/health
+curl http://localhost:3000/api/auth/health/signup
+curl http://localhost:3000/api/auth/health/login
+curl http://localhost:3000/api/auth/health/profile
 ```
 
-### 2. Environment Setup
-Create `.env` file:
-
-```env
-MONGODB_URI=mongodb://localhost:27017/auth_db
-JWT_SECRET=your-secret-key
-PORT=3000
-```
-
-### 3. Start Server
-
-```bash
-npm start
-```
-
-## 🧪 API Testing with Postman
-
-### 🔹 1. Signup User
-- **Method:** `POST`
-- **URL (Live):** `https://localhost:3000/api/auth/signup`
-- **Headers:** `Content-Type: application/json`
-- **Body:**
-
+**Sample Response:**
 ```json
 {
-  "name": "John Doe",
-  "officer_id": "OFF123",
-  "phone_number": "1234567890",
-  "password": "password123"
+  "status": "ok",
+  "route": "POST /api/auth/signup"
 }
 ```
 
-### 🔹 2. Login User
-- **Method:** `POST`
-- **URL (Live):** `https://localhost:3000/api/auth/login`
-- **Headers:** `Content-Type: application/json`
-- **Body:**
+---
 
-```json
-{
-  "phone_number": "1234567890",
-  "password": "password123"
-}
+## 🧑‍💻 Usage
+
+1. **Install dependencies:**
+   ```sh
+   npm install
+   ```
+
+2. **Set up your `.env` file** with MongoDB URI, JWT secret, and port.
+
+   Example:
+   ```
+   MONGO_URI=mongodb://localhost:27017/auth
+   JWT_SECRET=your_jwt_secret
+   PORT=3000
+   ```
+
+3. **Start the server:**
+   ```sh
+   npm run dev
+   ```
+
+---
+
+## 📁 Project Structure
+
+```
+auth-api/
+├── controllers/
+├── middleware/
+├── models/
+├── routes/
+├── schemas/
+├── server.js
+├── .env
+└── README.md
 ```
 
-- ✅ **Response:** Copy the `token` from the response
-
-### 🔹 3. Get User Profile
-- **Method:** `GET`
-- **URL (Live):** `https://localhost:3000/api/auth/profile`
-- **Headers:**
-  - `Content-Type: application/json`
-  - `Authorization: Bearer <paste-token-here>`
-
-## 📦 Dependencies
-
-- **Express.js** - Web framework
-- **MongoDB + Mongoose** - Database
-- **JWT** - Token authentication
-- **Bcrypt** - Password hashing
-- **Joi** - Input validation
-
-
-
-
-
-## 🔧 Environment Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `MONGODB_URI` | MongoDB connection string | `mongodb://localhost:27017/auth_db` |
-| `JWT_SECRET` | Secret key for JWT tokens | `your-secret-key` |
-| `PORT` | Server port number | `3000` |
-
-## 🚦 API Endpoints
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| `POST` | `/api/auth/signup` | Register new user | ❌ |
-| `POST` | `/api/auth/login` | User login | ❌ |
-| `GET` | `/api/auth/profile` | Get user profile | ✅ |
-
-## 📝 Response Examples
-
-### Successful Login Response
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": "64f123456789abcdef123456",
-    "name": "John Doe",
-    "officer_id": "OFF123",
-    "phone_number": "1234567890"
-  }
-}
-```
-
-### Profile Response
-```json
-{
-  "user": {
-    "id": "64f123456789abcdef123456",
-    "name": "John Doe",
-    "officer_id": "OFF123",
-    "phone_number": "1234567890",
-    "createdAt": "2024-01-15T10:30:00.000Z"
-  }
-}
-```
+---
