@@ -1,12 +1,13 @@
 # Dictionary API
 
-A  REST API for storing and retrieving dictionary data using Node.js, Express, and MongoDB.
+A REST API for storing and retrieving dictionary data using Node.js, Express, and MongoDB.
 
 ## Features
 
 - **POST** `/api/dictionary/upload` - Upload large dictionary JSON data
 - **GET** `/api/dictionary/word/:word` - Get meaning of a specific word
 - **GET** `/api/dictionary/words` - Get list of all words (limited to 100 for testing)
+- **Health Check Endpoints** for all main routes
 
 ## Setup Instructions
 
@@ -112,6 +113,47 @@ curl https://iaf-dictionary.onrender.com/api/dictionary/word/ABANDON
 curl https://iaf-dictionary.onrender.com/api/dictionary/words
 ```
 
+**Response:**
+```json
+{
+  "total": 100,
+  "words": ["ABANDON", "ABILITY", ...]
+}
+```
+
+## Health Check
+
+The Dictionary API provides health check endpoints for each main route to help you monitor service availability and integration status.
+
+### Health Check Endpoints
+
+| Endpoint                                 | Description                              |
+|-------------------------------------------|------------------------------------------|
+| `GET /api/dictionary/health`              | General health check for the dictionary API |
+| `GET /api/dictionary/health/upload`       | Health check for the upload endpoint      |
+| `GET /api/dictionary/health/word/:word`   | Health check for the word lookup endpoint |
+| `GET /api/dictionary/health/words`        | Health check for the all words endpoint   |
+
+#### Example Usage
+
+```bash
+curl https://iaf-dictionary.onrender.com/api/dictionary/health
+curl https://iaf-dictionary.onrender.com/api/dictionary/health/upload
+curl https://iaf-dictionary.onrender.com/api/dictionary/health/word/ABANDON
+curl https://iaf-dictionary.onrender.com/api/dictionary/health/words
+```
+
+**Sample Response:**
+```json
+{
+  "status": "ok",
+  "route": "GET /api/dictionary/words"
+}
+```
+
+Use these endpoints to verify that each API route is up and responding as expected.  
+They are especially useful for automated monitoring and deployment readiness checks.
+
 ## Project Structure
 
 ```
@@ -125,7 +167,7 @@ dictionary-api/
 │   └── Word.js           # Word schema definition
 ├── routes/
 │   └── dictionary.js     # API routes
-└── README.md            # Documentation
+└── README.md             # Documentation
 ```
 
 ## Data Format
@@ -148,7 +190,7 @@ The API expects dictionary data in the following format:
 
 1. **Health Check**
    ```bash
-   curl https://iaf-dictionary.onrender.com/health
+   curl https://iaf-dictionary.onrender.com/api/dictionary/health
    ```
 
 2. **Upload Sample Data**
