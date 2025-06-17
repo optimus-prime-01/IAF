@@ -1,11 +1,9 @@
-import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
 import Pdf from 'react-native-pdf';
-import { useNavigation } from '@react-navigation/native';
-import { useLayoutEffect } from 'react';
-const BASE_URL = 'http://192.168.205.128:3001';
+const BASE_URL = 'http://192.168.205.128:4001';
 
 type PdfDocument = {
   _id: string;
@@ -35,19 +33,28 @@ useLayoutEffect(() => {
 }, [doc]);
 
   useEffect(() => {
-    if (!id) return;
-    (async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get<PdfDocument>(`${BASE_URL}/api/pdfs/${id}`);
-        setDoc(res.data);
-      } catch (e: any) {
-        setError(e.message || 'Failed to load PDF details.');
-      } finally {
-        setLoading(false);
+  if (!id) return;
+
+  (async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${BASE_URL}/api/pdfs/${id}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch PDF: ${response.status}`);
       }
-    })();
-  }, [id]);
+
+      const data: PdfDocument = await response.json();
+
+      setDoc(data);
+    } catch (e: any) {
+      setError(e.message || 'Failed to load PDF details.');
+      console.error('🔥 PDF fetch error:', e);
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, [id]);
 
   if (loading) {
     return (
@@ -70,7 +77,7 @@ useLayoutEffect(() => {
     uri: `${BASE_URL}${doc.pdfUrl}`,
     cache: true,
   };
-
+  console.log("🔗 PDF URI:", pdfSource.uri);
   return (
     <>
     <Stack>

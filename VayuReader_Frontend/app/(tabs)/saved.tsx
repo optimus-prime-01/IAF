@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -31,38 +30,102 @@ const AbbreviationScreen = () => {
   /** ───────────────────────────────────
    * 1) Load first 15 abbreviations
    */
+  // const fetchInitial = useCallback(async () => {
+  //   try {
+  //     const res = await axios.get<AbbrevObj[]>(
+  //       'http://192.168.205.128:4000/api/abbreviations/all'
+  //     );
+  //     const slice = res.data.slice(0, 15);
+  //     setInitialData(slice);
+  //     console.log("✅ POST Success:", res.data);
+  //     setData(slice);
+  //   } catch (error) {
+  //     Alert.alert('Error', 'Failed to load abbreviations.');
+  //     if (axios.isAxiosError(error)) {
+  //   console.error("❌ Axios Error (POST):", error.message);
+  //   console.error("🔎 Response:", error.response?.data);
+  //   console.error("🌐 Request Config:", error.config);
+  // } else {
+  //   console.error("🔥 Unknown Error:", error);
+  // }
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, []);
   const fetchInitial = useCallback(async () => {
-    try {
-      const res = await axios.get<AbbrevObj[]>(
-        'http://192.168.205.128:3000/api/abbreviations/all'
-      );
-      const slice = res.data.slice(0, 15);
-      setInitialData(slice);
-      setData(slice);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to load abbreviations.');
-    } finally {
-      setLoading(false);
+  try {
+    const response = await fetch('http://192.168.205.128:4000/api/abbreviations/all');
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ Fetch Error (Status):", response.status);
+      console.error("📄 Response Body:", errorText);
+      Alert.alert('Error', `Server responded with status ${response.status}`);
+      return;
     }
-  }, []);
+
+    const data: AbbrevObj[] = await response.json();
+    const slice = data.slice(0, 15);
+    console.log("✅ Fetch Success:", data);
+    setInitialData(slice);
+    setData(slice);
+  } catch (error) {
+    console.error("🔥 Fetch Error:", error);
+    Alert.alert('Error', 'Failed to load abbreviations.');
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
 
   /** ───────────────────────────────────
    * 2) Search single abbreviation
    */
-  const fetchSingleAbbrev = async (word: string) => {
+//   const fetchSingleAbbrev = async (word: string) => {
+//   const trimmed = word.trim();
+//   if (!trimmed) {
+//     setData(initialData);
+//     return;
+//   }
+//   try {
+//     setLoading(true);
+//     // convert to UPPERCASE before hitting the API
+//     const res = await axios.get<AbbrevObj>(
+//       `http://192.168.205.128:4000/api/abbreviations/${trimmed.toUpperCase()}`
+//     );
+//     setData([res.data]);
+//   } catch {
+//     setData([]);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+const fetchSingleAbbrev = async (word: string) => {
   const trimmed = word.trim();
   if (!trimmed) {
     setData(initialData);
     return;
   }
+
   try {
     setLoading(true);
-    // convert to UPPERCASE before hitting the API
-    const res = await axios.get<AbbrevObj>(
-      `http://192.168.205.128:3000/api/abbreviations/${trimmed.toUpperCase()}`
+    const response = await fetch(
+      `http://192.168.205.128:4000/api/abbreviations/${trimmed.toUpperCase()}`
     );
-    setData([res.data]);
-  } catch {
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ Fetch Error (Status):", response.status);
+      console.error("📄 Response Body:", errorText);
+      setData([]);
+      return;
+    }
+
+    const data: AbbrevObj = await response.json();
+    console.log("✅ Fetch Success (Single):", data);
+    setData([data]);
+  } catch (error) {
+    console.error("🔥 Fetch Exception:", error);
     setData([]);
   } finally {
     setLoading(false);
