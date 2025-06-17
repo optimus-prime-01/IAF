@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -38,47 +37,112 @@ const DictionaryScreen = () => {
   /** ───────────────────────────────────
    * Fetch the first 10 records once
    */
+  // const fetchInitial = useCallback(async () => {
+  //   try {
+  //     const requests = PRESET_WORDS.slice(0, 10).map((w) =>
+  //       axios
+  //         .get<WordObj>(
+  //           `https://dictionary-service-k9cu.onrender.com/api/dictionary/word/${w}`
+  //         )
+  //         .then((r) => r.data)
+  //         .catch(() => null)
+  //     );
+  //     const results = (await Promise.all(requests)).filter(Boolean) as WordObj[];
+  //     setInitialData(results);
+  //     setData(results);
+  //   } catch (e) {
+  //     Alert.alert('Error', 'Failed to load initial words.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, []);
+  // converting it into fetch
   const fetchInitial = useCallback(async () => {
-    try {
-      const requests = PRESET_WORDS.slice(0, 10).map((w) =>
-        axios
-          .get<WordObj>(
-            `https://dictionary-service-k9cu.onrender.com/api/dictionary/word/${w}`
-          )
-          .then((r) => r.data)
-          .catch(() => null)
-      );
-      const results = (await Promise.all(requests)).filter(Boolean) as WordObj[];
-      setInitialData(results);
-      setData(results);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to load initial words.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  try {
+    const requests = PRESET_WORDS.slice(0, 10).map(async (w) => {
+      try {
+        const response = await fetch(
+          `http://192.168.205.128:4002/api/dictionary/word/${w}`
+        );
+
+        if (!response.ok) {
+          console.error(`❌ Word "${w}" failed with status ${response.status}`);
+          return null;
+        }
+
+        const data: WordObj = await response.json();
+        console.log(`✅ Word "${w}" fetched successfully`, data);
+        return data;
+      } catch (err) {
+        console.error(`🔥 Fetch error for "${w}":`, err);
+        return null;
+      }
+    });
+
+    const results = (await Promise.all(requests)).filter(Boolean) as WordObj[];
+    setInitialData(results);
+    setData(results);
+  } catch (e) {
+    console.error("🚨 Unexpected error:", e);
+    Alert.alert('Error', 'Failed to load initial words.');
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
 
   /** ───────────────────────────────────
    * Fetch single word when the user types
    */
+  // const fetchSingleWord = async (word: string) => {
+  //   if (!word.trim()) {
+  //     // reset to initial list
+  //     setData(initialData);
+  //     return;
+  //   }
+  //   try {
+  //     setLoading(true);
+  //     const res = await axios.get<WordObj>(
+  //       `https://dictionary-service-k9cu.onrender.com/api/dictionary/word/${word.trim()}`
+  //     );
+  //     setData([res.data]);
+  //   } catch {
+  //     setData([]);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const fetchSingleWord = async (word: string) => {
-    if (!word.trim()) {
-      // reset to initial list
-      setData(initialData);
+  if (!word.trim()) {
+    // reset to initial list
+    setData(initialData);
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const response = await fetch(
+      `http://192.168.205.128:4002/api/dictionary/word/${word.trim()}`
+    );
+
+    if (!response.ok) {
+      console.error(`❌ Failed to fetch "${word}": status ${response.status}`);
+      setData([]);
       return;
     }
-    try {
-      setLoading(true);
-      const res = await axios.get<WordObj>(
-        `https://dictionary-service-k9cu.onrender.com/api/dictionary/word/${word.trim()}`
-      );
-      setData([res.data]);
-    } catch {
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+
+    const data: WordObj = await response.json();
+    console.log(`✅ Fetched "${word}" successfully`, data);
+    setData([data]);
+  } catch (err) {
+    console.error(`🔥 Fetch error for "${word}":`, err);
+    setData([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   /** ───────────────────────────────────
    * Handle Android back button to reset search

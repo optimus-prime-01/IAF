@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Image, Text, View } from 'react-native';
@@ -19,18 +18,47 @@ export default function Index() {
   const [loading,     setLoading]     = useState<boolean>(true);
 
   // 1) Fetch on mount
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       const res = await axios.get<PDF[]>('http://192.168.205.128:3001/api/pdfs/all');
+  //       setAllPdfs(res.data.map(d => ({ ...d, id: d._id })));
+  //       console.log("✅ POST Success:", res.data);
+  //     } catch (err) {
+  //       console.error(err);
+  //       if (axios.isAxiosError(err)) {
+  //   console.error("❌ Axios Error (POST):", err.message);
+  //   console.error("🔎 Response:", err.response?.data);
+  //   console.error("🌐 Request Config:", err.config);
+  // } else {
+  //   console.error("🔥 Unknown Error:", err);
+  // }
+
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   })();
+  // }, []);
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await axios.get<PDF[]>('http://192.168.205.128:3001/api/pdfs/all');
-        setAllPdfs(res.data.map(d => ({ ...d, id: d._id })));
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+  (async () => {
+    try {
+      const response = await fetch('http://192.168.205.128:4001/api/pdfs/all');
+
+      if (!response.ok) {
+        console.error(`❌ Failed to fetch PDFs: status ${response.status}`);
+        return;
       }
-    })();
-  }, []);
+
+      const data: PDF[] = await response.json();
+      setAllPdfs(data.map((d) => ({ ...d, id: d._id })));
+      console.log("✅ PDFs fetched successfully:", data);
+    } catch (err) {
+      console.error("🔥 Fetch error for PDFs:", err);
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, []);
 
   // 2) Static sections
   const recentData  = useMemo(() =>

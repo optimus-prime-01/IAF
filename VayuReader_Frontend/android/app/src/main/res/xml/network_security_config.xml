@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <!-- Allow cleartext for your development IP -->
+  <domain-config cleartextTrafficPermitted="true">
+    <!-- replace with your actual IP -->
+    <domain includeSubdomains="true">192.168.205.128</domain>
+  </domain-config>
+
+  <!-- Optional: allow all HTTP (remove this in production!) -->
+  <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

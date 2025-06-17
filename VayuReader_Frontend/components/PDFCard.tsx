@@ -2,10 +2,11 @@ import { Link } from 'expo-router';
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 
-const BASE_URL = 'http://192.168.205.128:3001';
+const BASE_URL = 'http://192.168.205.128:4001';
 
 const PDFCard = ({ _id, title, createdAt, thumbnail, cardWidth, category }: PDF & { cardWidth?: number }) => {
-  const thumbnailUri = thumbnail ? { uri: `${BASE_URL}${thumbnail}` } :'https://placehold.co/600x800';
+  // const thumbnailUri = thumbnail ? { uri: `${BASE_URL}${thumbnail}` } :'https://placehold.co/600x800';
+  const thumbnailUri=require("../assets/thumbnails/Wireless.jpg")
   
   return (
     <Link
