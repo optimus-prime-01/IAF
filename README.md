@@ -58,6 +58,10 @@ VayuReader is a powerful, multi-module platform designed for seamless PDF docume
                            └─────────────────────┘
 ```
 
+## Application View 
+
+![App](./VayuReader_Frontend/assets/images/application_view1.png)
+
 ---
 
 ## 📂 Project Structure
