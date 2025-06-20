@@ -22,6 +22,7 @@ router.get('/health', (req, res) => {
   res.json({ status: 'ok', route: '/api/dictionary' });
 });
 
+// Upload full dictionary
 router.post('/upload', async (req, res) => {
   try {
     const dictionaryData = req.body;
@@ -85,7 +86,7 @@ router.post('/upload', async (req, res) => {
   }
 });
 
-
+// Exact match + related words
 router.get('/word/:word', async (req, res) => {
   try {
     const word = req.params.word;
@@ -94,11 +95,16 @@ router.get('/word/:word', async (req, res) => {
     }
 
     const wordDoc = await Word.findOne({ word: { $regex: `^${word}$`, $options: 'i' } }).lean();
+    const relatedWords = await Word.find({ word: { $regex: word, $options: 'i' } })
+      .limit(20)
+      .select('word')
+      .lean();
 
     if (!wordDoc) {
       return res.status(404).json({
         error: 'Word not found',
-        word: word
+        word: word,
+        related: relatedWords.map(w => w.word)
       });
     }
 
@@ -106,7 +112,10 @@ router.get('/word/:word', async (req, res) => {
       word: wordDoc.word,
       meanings: wordDoc.meanings,
       synonyms: wordDoc.synonyms,
-      antonyms: wordDoc.antonyms
+      antonyms: wordDoc.antonyms,
+      related: relatedWords
+        .map(w => w.word)
+        .filter(w => w.toLowerCase() !== word.toLowerCase())
     });
   } catch (error) {
     console.error('Error retrieving word:', error);
@@ -114,9 +123,9 @@ router.get('/word/:word', async (req, res) => {
   }
 });
 
+// Get first 100 words
 router.get('/words', async (req, res) => {
   try {
-   
     const words = await Word.find().limit(100).select('word').lean();
     res.json({
       total: words.length,
@@ -128,4 +137,25 @@ router.get('/words', async (req, res) => {
   }
 });
 
+// Partial search for words with full info (meanings, etc.)
+router.get('/search/:term', async (req, res) => {
+  try {
+    const searchTerm = req.params.term;
+    if (!searchTerm) {
+      return res.status(400).json({ error: 'Search term is required' });
+    }
+    const regex = new RegExp(searchTerm, 'i');
+    const results = await Word.find({ word: regex })
+      .limit(20)
+      .lean();
+
+    res.json({
+      total: results.length,
+      words: results
+    });
+  } catch (error) {
+    console.error('Error searching words:', error);
+    res.status(500).json({ error: 'Failed to search words' });
+  }
+});
 module.exports = router;
