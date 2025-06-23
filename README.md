@@ -21,6 +21,8 @@
 [![React](https://img.shields.io/badge/React-18.x-61DAFB.svg?logo=react)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC.svg?logo=tailwindcss)](https://tailwindcss.com/)
 [![React Router](https://img.shields.io/badge/React%20Router-v6-critical.svg?logo=reactrouter)](https://reactrouter.com/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.10-blue.svg?logo=kotlin)](https://kotlinlang.org/)
+
 
 VayuReader is a powerful, multi-module platform designed for seamless PDF document management, intelligent search capabilities, and comprehensive content organization. The platform combines a mobile-first approach with robust backend services and an intuitive admin dashboard.
 
