@@ -1,6 +1,13 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, Text, View } from 'react-native';
+import {
+  BackHandler,
+  FlatList,
+  Image,
+  Text,
+  View,
+  RefreshControl,
+} from 'react-native';
 
 import PDFCard from "@/components/PDFCard";
 import SearchBar from "@/components/SearchBar";
@@ -12,115 +19,117 @@ type RenderCategoryItemProps = { item: string };
 
 export default function Index() {
   const router = useRouter();
-  const [allPdfs,     setAllPdfs]     = useState<PDF[]>([]);
-  const [activeCat,   setActiveCat]   = useState<string>('All');
-  const [searchText,  setSearchText]  = useState<string>('');
-  const [loading,     setLoading]     = useState<boolean>(true);
+  const [allPdfs, setAllPdfs] = useState<PDF[]>([]);
+  const [activeCat, setActiveCat] = useState<string>('All');
+  const [searchText, setSearchText] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
-  // 1) Fetch on mount
-  // useEffect(() => {
-  //   (async () => {
-  //     try {
-  //       const res = await axios.get<PDF[]>('http://192.168.205.128:3001/api/pdfs/all');
-  //       setAllPdfs(res.data.map(d => ({ ...d, id: d._id })));
-  //       console.log("✅ POST Success:", res.data);
-  //     } catch (err) {
-  //       console.error(err);
-  //       if (axios.isAxiosError(err)) {
-  //   console.error("❌ Axios Error (POST):", err.message);
-  //   console.error("🔎 Response:", err.response?.data);
-  //   console.error("🌐 Request Config:", err.config);
-  // } else {
-  //   console.error("🔥 Unknown Error:", err);
-  // }
-
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   })();
-  // }, []);
-  useEffect(() => {
-  (async () => {
+  /** ───────────────────────────────
+   * 📦 Fetch PDFs function
+   */
+  const fetchPdfs = async () => {
     try {
-      const response = await fetch('http://192.168.205.128:4001/api/pdfs/all');
-
-      if (!response.ok) {
-        console.error(`❌ Failed to fetch PDFs: status ${response.status}`);
-        return;
-      }
-
+      setLoading(true);
+      const response = await fetch('http://192.168.198.128:4001/api/pdfs/all');
+      if (!response.ok) throw new Error('Failed to fetch PDFs');
       const data: PDF[] = await response.json();
       setAllPdfs(data.map((d) => ({ ...d, id: d._id })));
-      console.log("✅ PDFs fetched successfully:", data);
     } catch (err) {
-      console.error("🔥 Fetch error for PDFs:", err);
+      console.error("🔥 Fetch error:", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  })();
-}, []);
+  };
 
-  // 2) Static sections
-  const recentData  = useMemo(() =>
+  /** ───────────────────────────────
+   * 🧠 Pull to refresh handler
+   */
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchPdfs();
+  };
+
+  /** ───────────────────────────────
+   * ⏮ Back button clears search
+   */
+  useEffect(() => {
+    const handleBackPress = () => {
+      if (searchText) {
+        setSearchText('');
+        return true;
+      }
+      return false;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    return () => backHandler.remove();
+  }, [searchText]);
+
+  /** ───────────────────────────────
+   * 🔃 Initial fetch
+   */
+  useEffect(() => {
+    fetchPdfs();
+  }, []);
+
+  /** ───────────────────────────────
+   * 🧠 Memoized derived data
+   */
+  const recentData = useMemo(() =>
     [...allPdfs]
-      .sort((a,b)=> new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0,10)
-  , [allPdfs]);
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 10), [allPdfs]);
 
-  const popularData = useMemo(() => allPdfs.slice(0,10), [allPdfs]);
+  const popularData = useMemo(() => allPdfs.slice(0, 10), [allPdfs]);
 
-  const categories = useMemo(
-    () => Array.from(new Set(allPdfs.map(p=>p.category))),
-    [allPdfs]
-  );
+  const categories = useMemo(() =>
+    Array.from(new Set(allPdfs.map(p => p.category))),
+    [allPdfs]);
 
-  // 3) Search results
   const searchResults = useMemo(() => {
     const q = searchText.trim().toLowerCase();
     if (!q) return [];
     return allPdfs.filter(p => p.title.toLowerCase().includes(q));
   }, [searchText, allPdfs]);
 
-  // 4) Category‑filtered grid (only used when not searching)
   const gridData = useMemo(() => {
     return activeCat === 'All'
       ? allPdfs
       : allPdfs.filter(p => p.category === activeCat);
   }, [activeCat, allPdfs]);
 
-  // 5) Decide which data the main FlatList shows
   const displayData = searchText ? searchResults : gridData;
 
-  // 6) Renderers
-  const renderHorizontal = ({ item }:RenderItemProps) => (
-    <View style={{ marginRight:12 }}>
-      <PDFCard {...item} cardWidth={100}/>
+  /** ───────────────────────────────
+   * 🧱 UI Components
+   */
+  const renderHorizontal = ({ item }: RenderItemProps) => (
+    <View style={{ marginRight: 12 }}>
+      <PDFCard {...item} cardWidth={100} />
     </View>
   );
-  const renderCategory = ({ item }:RenderCategoryItemProps) => (
+
+  const renderCategory = ({ item }: RenderCategoryItemProps) => (
     <Text
-      onPress={()=>setActiveCat(item)}
-      className={`px-4 py-2 mr-3 rounded-full ${
-        activeCat===item ? 'bg-[#5B5FEF]' : 'bg-[#1C1B3A]'}`
-      }
-      style={{ color:'white' }}
+      onPress={() => setActiveCat(item)}
+      className={`px-4 py-2 mr-3 rounded-full ${activeCat === item ? 'bg-[#5B5FEF]' : 'bg-[#1C1B3A]'}`}
+      style={{ color: 'white' ,fontSize: 15 }}
     >{item}</Text>
   );
-  const renderGrid = ({ item }:RenderItemProps) => (
+
+  const renderGrid = ({ item }: RenderItemProps) => (
     <View className="mb-5 mr-3">
       <PDFCard {...item} cardWidth={100} />
     </View>
   );
 
-  // 7) Header component: shows static sections only when NOT searching
   const ListHeader = () => (
     <>
-      
-
       {!searchText && (
         <>
-          {/* Recent */}
-          <Text className="text-white text-lg font-bold mt-4 mb-2 px-2">
+          <Text className="text-white font-bold mt-4 mb-5 px-2"
+  style={{ fontSize: 19 }}>
             Recently Uploaded PDFs
           </Text>
           <FlatList
@@ -129,11 +138,12 @@ export default function Index() {
             keyExtractor={(item) => item._id}
             renderItem={renderHorizontal}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft:0, paddingBottom:8 }}
+            contentContainerStyle={{ paddingLeft: 0, paddingBottom: 8 }}
           />
+          <View className="h-px bg-gray-700 my-2 mt-2" />
 
-          {/* Popular */}
-          <Text className="text-white text-lg font-bold mt-4 mb-2 px-2">
+          <Text className="text-white font-bold mt-4 mb-5 px-2"
+          style={{ fontSize: 19 }}>
             Mostly Accessed PDFs
           </Text>
           <FlatList
@@ -142,25 +152,25 @@ export default function Index() {
             keyExtractor={(item) => item._id}
             renderItem={renderHorizontal}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft:0, paddingBottom:8 }}
+            contentContainerStyle={{ paddingLeft: 0, paddingBottom: 8 }}
           />
-
-          {/* Categories */}
-          <Text className="text-white text-lg font-bold mt-4 mb-2 px-2">
+          <View className="h-px bg-gray-700 my-2 mt-2" />
+          <Text className="text-white  font-bold mt-4 mb-3 px-2"
+          style={{ fontSize: 20 }}>
             Categories
           </Text>
           <FlatList
             data={['All', ...categories]}
             horizontal
-            keyExtractor={i=>i}
+            keyExtractor={i => i}
             renderItem={renderCategory}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft:4, paddingBottom:8 }}
+            contentContainerStyle={{ paddingLeft: 4, paddingBottom: 8 }}
           />
 
-          {/* Grid Title */}
-          <Text className="text-white text-lg font-bold mt-4 mb-2 px-4">
-            {activeCat==='All'? 'All PDFs' : `${activeCat} PDFs`}
+          <Text className="text-white font-bold mt-4 mb-4 px-2"
+          style={{ fontSize: 19}}>
+            {activeCat === 'All' ? 'All PDF' : `${activeCat} PDF`}
           </Text>
         </>
       )}
@@ -175,10 +185,8 @@ export default function Index() {
 
   return (
     <View className="flex-1 bg-black">
-      <Image source={images.bg}
-             className="absolute " />
-      {/* logo + search */}
-      <Image source={icons.logo} className="w-24 h-28 mt-10 mb-6 self-center"/>
+      <Image source={images.bg} className="absolute " />
+      <Image source={icons.logo} className="w-24 h-28 mt-14 mb-6 self-center" />
       <View className="px-5 mb-4">
         <SearchBar
           placeholder="Search for a PDF"
@@ -190,21 +198,30 @@ export default function Index() {
       {loading && (
         <Text className="text-center text-white mb-4">Loading…</Text>
       )}
+
       <FlatList
         data={displayData}
         keyExtractor={(item) => item._id}
         renderItem={renderGrid}
         numColumns={3}
-        columnWrapperStyle={{ justifyContent:'flex-start' }}
+        columnWrapperStyle={{ justifyContent: 'flex-start' }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom:80, paddingHorizontal:16 }}
-        ListHeaderComponent={<ListHeader/>}
+        contentContainerStyle={{ paddingBottom: 30, paddingHorizontal: 16 }}
+        ListHeaderComponent={<ListHeader />}
         ListEmptyComponent={
           searchText ? (
             <Text className="text-center text-white mt-10">
               No PDFs match “{searchText}.”
             </Text>
           ) : null
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#5B5FEF"
+            colors={['#5B5FEF']}
+          />
         }
       />
     </View>

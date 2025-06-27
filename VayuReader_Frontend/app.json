@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "IAF",
-    "slug": "IAF",
+    "name": "VayuReader",
+    "slug": "VayuReader",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
@@ -18,7 +18,13 @@
       },
       "edgeToEdgeEnabled": true,
       "usesCleartextTraffic": true,
-      "package": "com.nativemedia12.IAF"
+      "package": "com.nativemedia12.IAF",
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -41,6 +47,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "25b40b70-4040-4cad-a5b1-8ddc0b9daf93"
+      }
     }
   }
 }

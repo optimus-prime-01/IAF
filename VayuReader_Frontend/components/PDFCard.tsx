@@ -6,7 +6,7 @@ const BASE_URL = 'http://192.168.205.128:4001';
 
 const PDFCard = ({ _id, title, createdAt, thumbnail, cardWidth, category }: PDF & { cardWidth?: number }) => {
   // const thumbnailUri = thumbnail ? { uri: `${BASE_URL}${thumbnail}` } :'https://placehold.co/600x800';
-  const thumbnailUri=require("../assets/thumbnails/Wireless.jpg")
+  const thumbnailUri=require("../assets/thumbnails/thumbnail.png")
   
   return (
     <Link
@@ -19,7 +19,7 @@ const PDFCard = ({ _id, title, createdAt, thumbnail, cardWidth, category }: PDF 
       >
         <Image
           source={thumbnailUri}
-          className="w-full h-52 rounded-lg"
+          className="w-full h-40 rounded-lg"
           resizeMode="cover"
         />
         <Text

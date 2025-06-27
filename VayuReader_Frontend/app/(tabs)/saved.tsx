@@ -1,11 +1,18 @@
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Alert,
   BackHandler,
   FlatList,
   Image,
+  RefreshControl,
   Text,
   View,
 } from 'react-native';
@@ -19,145 +26,100 @@ type AbbrevObj = {
   fullForm: string;
 };
 
-const AbbreviationScreen = () => {
-  const router = useRouter(); // not used for navigation here
+const BASE_URL = 'http://192.168.198.128:4000';
 
+export default function AbbreviationScreen() {
+  const [allData, setAllData] = useState<AbbrevObj[]>([]);
   const [initialData, setInitialData] = useState<AbbrevObj[]>([]);
-  const [data, setData]         = useState<AbbrevObj[]>([]);
   const [searchText, setSearchText] = useState('');
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  /** ───────────────────────────────────
-   * 1) Load first 15 abbreviations
-   */
-  // const fetchInitial = useCallback(async () => {
-  //   try {
-  //     const res = await axios.get<AbbrevObj[]>(
-  //       'http://192.168.205.128:4000/api/abbreviations/all'
-  //     );
-  //     const slice = res.data.slice(0, 15);
-  //     setInitialData(slice);
-  //     console.log("✅ POST Success:", res.data);
-  //     setData(slice);
-  //   } catch (error) {
-  //     Alert.alert('Error', 'Failed to load abbreviations.');
-  //     if (axios.isAxiosError(error)) {
-  //   console.error("❌ Axios Error (POST):", error.message);
-  //   console.error("🔎 Response:", error.response?.data);
-  //   console.error("🌐 Request Config:", error.config);
-  // } else {
-  //   console.error("🔥 Unknown Error:", error);
-  // }
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }, []);
-  const fetchInitial = useCallback(async () => {
-  try {
-    const response = await fetch('http://192.168.205.128:4000/api/abbreviations/all');
+  // Shuffle helper
+  const shuffleArray = (arr: AbbrevObj[]) => {
+    return arr
+      .map((value) => ({ value, sort: Math.random() }))
+      .sort((a, b) => a.sort - b.sort)
+      .map(({ value }) => value);
+  };
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ Fetch Error (Status):", response.status);
-      console.error("📄 Response Body:", errorText);
-      Alert.alert('Error', `Server responded with status ${response.status}`);
-      return;
+  const fetchAll = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${BASE_URL}/api/abbreviations/all`);
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const data: AbbrevObj[] = await res.json();
+
+      const shuffled = shuffleArray(data);
+      setAllData(data);
+      setInitialData(shuffled.slice(0, 100));
+    } catch (err) {
+      console.error('🔥 Fetch all error:', err);
+      Alert.alert('Error', 'Failed to load abbreviations.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  }, []);
 
-    const data: AbbrevObj[] = await response.json();
-    const slice = data.slice(0, 15);
-    console.log("✅ Fetch Success:", data);
-    setInitialData(slice);
-    setData(slice);
-  } catch (error) {
-    console.error("🔥 Fetch Error:", error);
-    Alert.alert('Error', 'Failed to load abbreviations.');
-  } finally {
-    setLoading(false);
-  }
-}, []);
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchAll();
+  };
 
-  /** ───────────────────────────────────
-   * 2) Search single abbreviation
-   */
-//   const fetchSingleAbbrev = async (word: string) => {
-//   const trimmed = word.trim();
-//   if (!trimmed) {
-//     setData(initialData);
-//     return;
-//   }
-//   try {
-//     setLoading(true);
-//     // convert to UPPERCASE before hitting the API
-//     const res = await axios.get<AbbrevObj>(
-//       `http://192.168.205.128:4000/api/abbreviations/${trimmed.toUpperCase()}`
-//     );
-//     setData([res.data]);
-//   } catch {
-//     setData([]);
-//   } finally {
-//     setLoading(false);
-//   }
-// };
-const fetchSingleAbbrev = async (word: string) => {
-  const trimmed = word.trim();
-  if (!trimmed) {
-    setData(initialData);
-    return;
-  }
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedApiLookup = useCallback((query: string) => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    if (!query.trim()) return;
 
-  try {
-    setLoading(true);
-    const response = await fetch(
-      `http://192.168.205.128:4000/api/abbreviations/${trimmed.toUpperCase()}`
-    );
+    debounceTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${BASE_URL}/api/abbreviations/${query.trim().toUpperCase()}`
+        );
+        if (!res.ok) return;
+        const obj: AbbrevObj = await res.json();
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ Fetch Error (Status):", response.status);
-      console.error("📄 Response Body:", errorText);
-      setData([]);
-      return;
-    }
+        setAllData((prev) => {
+          const exists = prev.find((p) => p.abbreviation === obj.abbreviation);
+          if (exists) return prev;
+          return [...prev, obj];
+        });
+      } catch {
+        // silent fail
+      }
+    }, 400);
+  }, []);
 
-    const data: AbbrevObj = await response.json();
-    console.log("✅ Fetch Success (Single):", data);
-    setData([data]);
-  } catch (error) {
-    console.error("🔥 Fetch Exception:", error);
-    setData([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  /** ───────────────────────────────────
-   * 3) Android Back Button resets search
-   */
   useEffect(() => {
     const onBack = () => {
       if (searchText) {
         setSearchText('');
-        setData(initialData);
-        return true; // consumed
+        return true;
       }
-      return false;  // default back
+      return false;
     };
     const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
     return () => sub.remove();
-  }, [searchText, initialData]);
+  }, [searchText]);
 
-  /** ───────────────────────────────────
-   * 4) Fetch on mount
-   */
+  const filteredData = useMemo(() => {
+    const q = searchText.trim().toLowerCase();
+    return q
+      ? allData.filter((item) =>
+          item.abbreviation.toLowerCase().startsWith(q)
+        )
+      : initialData;
+  }, [searchText, allData, initialData]);
+
   useEffect(() => {
-    fetchInitial();
-  }, [fetchInitial]);
+    debouncedApiLookup(searchText);
+  }, [searchText, debouncedApiLookup]);
 
-  /** ───────────────────────────────────
-   * 5) Render each abbreviation box (non‑clickable)
-   */
   const renderItem = ({ item }: { item: AbbrevObj }) => (
     <View className="bg-[#1A1A40] rounded-xl p-4 mb-4">
       <Text className="text-white text-lg font-bold">{item.abbreviation}</Text>
@@ -165,47 +127,49 @@ const fetchSingleAbbrev = async (word: string) => {
     </View>
   );
 
-  /** ───────────────────────────────────
-   * 6) Screen JSX
-   */
   return (
     <View className="flex-1 bg-black">
       <Image source={images.bg} className="absolute" />
+      <Image
+        source={icons.logo}
+        className="w-24 h-28 mt-14 mb-5 self-center"
+      />
+
+      <View className="px-5 mb-3">
+        <SearchBar
+          placeholder="Search an abbreviation"
+          value={searchText}
+          onChangeText={setSearchText}
+        />
+      </View>
+
+      {loading && (
+        <View className="items-center justify-center my-4">
+          <ActivityIndicator size="large" color="#5B5FEF" />
+        </View>
+      )}
 
       <FlatList
-        data={data}
+        data={filteredData}
         keyExtractor={(item) => item.abbreviation}
         renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
-        ListHeaderComponent={
-          <View className="w-full">
-            {/* Logo */}
-            <Image
-              source={icons.logo}
-              className="w-24 h-28 mt-10 mb-5 mx-auto"
-            />
-
-            {/* SearchBar */}
-            <View className="mb-5">
-              <SearchBar
-                placeholder="Search an abbreviation"
-                value={searchText}
-                onChangeText={(txt) => {
-                  setSearchText(txt);
-                  fetchSingleAbbrev(txt);
-                }}
-              />
-            </View>
-
-            {/* Loading Spinner */}
-            {loading && (
-              <View className="justify-center items-center my-4">
-                <ActivityIndicator size="large" color="#5B5FEF" />
-              </View>
-            )}
-          </View>
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#5B5FEF"
+            colors={['#5B5FEF']}
+          />
         }
+        initialNumToRender={15}
+        maxToRenderPerBatch={25}
+        windowSize={10}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: 24,
+          paddingTop: loading ? 0 : 8,
+        }}
         ListEmptyComponent={
           !loading ? (
             <Text className="text-center text-gray-400 mt-10">
@@ -216,6 +180,4 @@ const fetchSingleAbbrev = async (word: string) => {
       />
     </View>
   );
-};
-
-export default AbbreviationScreen;
+}

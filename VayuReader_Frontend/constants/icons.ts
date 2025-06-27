@@ -6,7 +6,8 @@ import save from "@/assets/icons/save.png";
 import star from "@/assets/icons/star.png";
 import play from "@/assets/icons/play.png";
 import arrow from "@/assets/icons/arrow.png";
-
+import dict from "@/assets/icons/dict.png"
+import Acronyms from "@/assets/icons/Acronyms.png"
 export const icons = {
   home,
   search,
@@ -16,4 +17,6 @@ export const icons = {
   star,
   play,
   arrow,
+  dict,
+  Acronyms,
 };
