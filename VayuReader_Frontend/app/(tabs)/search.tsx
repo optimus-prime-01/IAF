@@ -1,11 +1,17 @@
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Alert,
   BackHandler,
   FlatList,
   Image,
+  RefreshControl,
   Text,
   TouchableOpacity,
   View,
@@ -15,10 +21,7 @@ import SearchBar from '@/components/SearchBar';
 import { icons } from '@/constants/icons';
 import { images } from '@/constants/images';
 
-const PRESET_WORDS = [
-  'A', 'A.D.', 'A.M.', 'AA', 'AAA', 'AAAS', 'AACHEN',
-  'AAH', 'AAHED', 'AAHING', 'AAHS', 'AALBORG', 'AALII',
-];
+const BASE_URL = 'http://192.168.198.128:4002';
 
 type WordObj = {
   word: string;
@@ -26,222 +29,162 @@ type WordObj = {
   synonyms?: string[];
 };
 
-const DictionaryScreen = () => {
+export default function DictionaryScreen() {
   const router = useRouter();
 
-  const [initialData, setInitialData] = useState<WordObj[]>([]);
-  const [data, setData] = useState<WordObj[]>([]);
   const [searchText, setSearchText] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<WordObj[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  /** ───────────────────────────────────
-   * Fetch the first 10 records once
-   */
-  // const fetchInitial = useCallback(async () => {
-  //   try {
-  //     const requests = PRESET_WORDS.slice(0, 10).map((w) =>
-  //       axios
-  //         .get<WordObj>(
-  //           `https://dictionary-service-k9cu.onrender.com/api/dictionary/word/${w}`
-  //         )
-  //         .then((r) => r.data)
-  //         .catch(() => null)
-  //     );
-  //     const results = (await Promise.all(requests)).filter(Boolean) as WordObj[];
-  //     setInitialData(results);
-  //     setData(results);
-  //   } catch (e) {
-  //     Alert.alert('Error', 'Failed to load initial words.');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }, []);
-  // converting it into fetch
-  const fetchInitial = useCallback(async () => {
-  try {
-    const requests = PRESET_WORDS.slice(0, 10).map(async (w) => {
-      try {
-        const response = await fetch(
-          `http://192.168.205.128:4002/api/dictionary/word/${w}`
-        );
+  const filterValidWords = (words: WordObj[]) =>
+    words.filter(word => word.meanings?.[0]?.definition?.trim());
 
-        if (!response.ok) {
-          console.error(`❌ Word "${w}" failed with status ${response.status}`);
-          return null;
-        }
+  const onRefresh = () => {
+    if (searchText.trim()) {
+      setRefreshing(true);
+      debouncedLookup(searchText.trim());
+    }
+  };
 
-        const data: WordObj = await response.json();
-        console.log(`✅ Word "${w}" fetched successfully`, data);
-        return data;
-      } catch (err) {
-        console.error(`🔥 Fetch error for "${w}":`, err);
-        return null;
-      }
-    });
-
-    const results = (await Promise.all(requests)).filter(Boolean) as WordObj[];
-    setInitialData(results);
-    setData(results);
-  } catch (e) {
-    console.error("🚨 Unexpected error:", e);
-    Alert.alert('Error', 'Failed to load initial words.');
-  } finally {
-    setLoading(false);
-  }
-}, []);
-
-
-  /** ───────────────────────────────────
-   * Fetch single word when the user types
-   */
-  // const fetchSingleWord = async (word: string) => {
-  //   if (!word.trim()) {
-  //     // reset to initial list
-  //     setData(initialData);
-  //     return;
-  //   }
-  //   try {
-  //     setLoading(true);
-  //     const res = await axios.get<WordObj>(
-  //       `https://dictionary-service-k9cu.onrender.com/api/dictionary/word/${word.trim()}`
-  //     );
-  //     setData([res.data]);
-  //   } catch {
-  //     setData([]);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  const fetchSingleWord = async (word: string) => {
-  if (!word.trim()) {
-    // reset to initial list
-    setData(initialData);
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    const response = await fetch(
-      `http://192.168.205.128:4002/api/dictionary/word/${word.trim()}`
-    );
-
-    if (!response.ok) {
-      console.error(`❌ Failed to fetch "${word}": status ${response.status}`);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedLookup = useCallback((word: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const q = word.trim();
+    if (!q) {
       setData([]);
       return;
     }
 
-    const data: WordObj = await response.json();
-    console.log(`✅ Fetched "${word}" successfully`, data);
-    setData([data]);
-  } catch (err) {
-    console.error(`🔥 Fetch error for "${word}":`, err);
-    setData([]);
-  } finally {
-    setLoading(false);
-  }
-};
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${BASE_URL}/api/dictionary/search/${q}`);
+        if (!res.ok) {
+          console.error('❌ Search failed', res.status);
+          setData([]);
+          return;
+        }
 
+        const result = await res.json();
+        const words: WordObj[] = result.words;
+        const filtered = filterValidWords(words);
+        setData(filtered);
+      } catch (err) {
+        console.error("🔥 Search error:", err);
+        setData([]);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    }, 400);
+  }, []);
 
-  /** ───────────────────────────────────
-   * Handle Android back button to reset search
-   */
   useEffect(() => {
-  const back = () => {
-    if (searchText) {
-      setSearchText('');
-      setData(initialData);
-      return true;
-    }
-    return false;
-  };
+    debouncedLookup(searchText);
+  }, [searchText, debouncedLookup]);
 
-  const subscription = BackHandler.addEventListener('hardwareBackPress', back);
-  return () => subscription.remove();
-}, [searchText, initialData]);
-
-  
   useEffect(() => {
-    fetchInitial();
-  }, [fetchInitial]);
+    const back = () => {
+      if (searchText) {
+        setSearchText('');
+        setData([]);
+        return true;
+      }
+      return false;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', back);
+    return () => sub.remove();
+  }, [searchText]);
 
-  /** ───────────────────────────────────
-   * Card renderer
-   */
   const renderItem = ({ item }: { item: WordObj }) => {
     const meaning = item.meanings?.[0]?.definition ?? 'No definition';
     return (
       <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={() =>
-        router.push({
-          pathname: '/word/[word]',
-          params: {
-            word: item.word,
-            definition: meaning,
-            pos: item.meanings?.[0]?.partOfSpeech,
-            examples: JSON.stringify(item.meanings?.[0]?.examples || []),
-            synonyms: item.synonyms?.join(', ') || '',
-          },
-        })
-      }
-      className="bg-[#1A1A40] rounded-xl p-4 mb-4"
-    >
-      <Text className="text-white text-lg font-bold">{item.word}</Text>
-      <Text className="text-gray-300 text-sm mt-1">{meaning}</Text>
-    </TouchableOpacity>
+        activeOpacity={0.7}
+        onPress={() =>
+          router.push({
+            pathname: '/word/[word]',
+            params: {
+              word: item.word,
+              definition: meaning,
+              pos: item.meanings?.[0]?.partOfSpeech,
+              examples: JSON.stringify(item.meanings?.[0]?.examples || []),
+              synonyms: item.synonyms?.join(', ') || '',
+            },
+          })
+        }
+        className="bg-[#1A1A40] rounded-xl p-4 mb-4"
+      >
+        <Text className="text-white text-lg font-bold">{item.word}</Text>
+        <Text className="text-gray-300 text-sm mt-1">{meaning}</Text>
+      </TouchableOpacity>
     );
   };
 
-  /** ───────────────────────────────────
-   * Screen JSX
-   */
   return (
     <View className="flex-1 bg-black">
       <Image source={images.bg} className="absolute" />
+      <Image source={icons.logo} className="w-24 h-28 mt-14 mb-5 self-center" />
+
+      <View className="px-5 mb-3">
+        <SearchBar
+          placeholder="Search a word"
+          value={searchText}
+          onChangeText={setSearchText}
+        />
+      </View>
+
+      {/* Show instruction if no word is searched */}
+      {!searchText && data.length === 0 && !loading && (
+        <Text
+          className="text-center text-gray-400 mb-2 mt-10"
+          style={{ fontSize: 16 }}
+        >
+          Search a word to see its meaning.
+        </Text>
+      )}
+
+      {/* Show loading spinner */}
+      {loading && (
+        <View className="items-center justify-center my-4">
+          <ActivityIndicator size="large" color="#5B5FEF" />
+          <Text className="text-white mt-2">Searching…</Text>
+        </View>
+      )}
 
       <FlatList
         data={data}
         keyExtractor={(item) => item.word}
         renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
-        ListHeaderComponent={
-          <View className="w-full">
-            <Image
-              source={icons.logo}
-              className="w-24 h-28 mt-10 mb-5 mx-auto"
-            />
-
-            <View className='mb-5'>
-            <SearchBar
-              placeholder="Search a word"
-              value={searchText}
-              onChangeText={(txt) => {
-                setSearchText(txt);
-                fetchSingleWord(txt);
-              }}
-            />
-            </View>
-
-            {loading && (
-              <View className="justify-center items-center my-4">
-                <ActivityIndicator size="large" color="#5B5FEF" />
-              </View>
-            )}
-          </View>
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#5B5FEF"
+            colors={['#5B5FEF']}
+          />
         }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: 24,
+          flexGrow: data.length === 0 ? 1 : undefined,
+          justifyContent: data.length === 0 ? 'center' : undefined,
+        }}
         ListEmptyComponent={
           !loading ? (
-            <Text className="text-center text-gray-400 mt-10">
-              {searchText ? 'Word not found.' : 'No data.'}
+            <Text
+              className="text-center text-gray-400 mt-10 px-5"
+              style={{ fontSize: 15 }}
+            >
+              {searchText
+                ? 'Word not found.'
+                : ''}
             </Text>
           ) : null
         }
       />
     </View>
   );
-};
-
-export default DictionaryScreen;
+}
