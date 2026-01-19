@@ -4,8 +4,13 @@ This directory contains comprehensive documentation for VayuReader Backend v2.
 
 ## Quick Links
 
-### Getting Started
-- [Setup & Installation](setup.md) - Install dependencies and run the backend
+### Design Documents
+- [High-Level Design (HLD)](HLD.md) - System architecture, components, data flows, and deployment strategy
+- [Low-Level Design (LLD)](LLD.md) - Detailed module designs, database schemas, API specs, and algorithms
+
+### User Guides
+- [User Manual](USER_MANUAL.md) - Complete administration and operations guide
+- [Setup & Installation](SETUP.md) - Install dependencies and run the backend
 - [Configuration](CONFIGURATION.md) - Environment variables and config files
 - [README](README.md) - Project overview and quick start
 
@@ -24,20 +29,27 @@ This directory contains comprehensive documentation for VayuReader Backend v2.
 - [Services](SERVICES.md) - Service layer documentation (JWT, OTP, SMS, Search, etc.)
 - [Scripts](SCRIPTS.md) - CLI utilities for user management and database operations
 - [SSE](SSE.md) - Server-Sent Events architecture and client integration
+- [SSE Integration Guide](SSE_INTEGRATION.md) - Client-side SSE implementation examples
 - [Auditing](AUDITING.md) - User audit system and admin action logging
 
 ### Operations
+- [Security](SECURITY.md) - Security hardening guide and production checklist
 - [Performance](PERFORMANCE.md) - Caching, connection pooling, horizontal scaling
 - [Deployment](DEPLOYMENT.md) - Docker setup, production checklist
 - [Testing](testing.md) - Unit tests, integration tests, CI/CD
 - [Contributing](CONTRIBUTING.md) - Development workflow and code review
 
+
 ## Documentation Status
 
 | Document | Status | Last Updated |
 |----------|--------|--------------|
+| HLD.md | ✅ Complete | 2026-01-19 |
+| LLD.md | ✅ Complete | 2026-01-19 |
+| USER_MANUAL.md | ✅ Complete | 2026-01-19 |
+| SECURITY.md | ✅ Complete | 2026-01-19 |
 | README.md | ✅ Complete | 2024-01-10 |
-| setup.md | ✅ Complete | 2024-01-10 |
+| SETUP.md | ✅ Complete | 2024-01-10 |
 | CONFIGURATION.md | ✅ Complete | 2024-01-10 |
 | ENDPOINTS.md | ✅ Complete | 2024-01-10 |
 | AUTH.md | ✅ Complete | 2024-01-10 |
@@ -50,6 +62,7 @@ This directory contains comprehensive documentation for VayuReader Backend v2.
 | ELASTICSEARCH.md | ✅ Complete | 2024-01-10 |
 | AUDITING.md | ✅ Complete | 2024-01-10 |
 | SSE.md | ✅ Complete | 2024-01-10 |
+| SSE_INTEGRATION.md | ✅ Complete | 2024-01-10 |
 | PERFORMANCE.md | ✅ Complete | 2024-01-10 |
 | DEPLOYMENT.md | ✅ Complete | 2024-01-10 |
 | testing.md | ✅ Complete | 2024-01-10 |
