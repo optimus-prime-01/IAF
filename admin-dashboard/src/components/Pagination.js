@@ -1,13 +1,6 @@
 import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
-/**
- * Reusable Pagination Component
- * Features:
- * - Page size selector (25, 50, 100)
- * - Jump-to-page input
- * - Smart page buttons (1 ... 4 5 [6] 7 8 ... 20)
- * - Items count display
- */
 export default function Pagination({
     currentPage,
     totalPages,
@@ -20,27 +13,19 @@ export default function Pagination({
 }) {
     const [jumpToPage, setJumpToPage] = useState('');
 
-    // Calculate showing range
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
     const endItem = Math.min(currentPage * pageSize, totalItems);
 
-    // Generate page numbers to display
     const getPageNumbers = () => {
         const pages = [];
         const delta = 2; // Pages to show on each side of current
 
         if (totalPages <= 7) {
-            // Show all pages if 7 or less
             for (let i = 1; i <= totalPages; i++) pages.push(i);
         } else {
-            // Always show first page
             pages.push(1);
+            if (currentPage > delta + 2) pages.push('...');
 
-            if (currentPage > delta + 2) {
-                pages.push('...');
-            }
-
-            // Pages around current
             const start = Math.max(2, currentPage - delta);
             const end = Math.min(totalPages - 1, currentPage + delta);
 
@@ -48,14 +33,9 @@ export default function Pagination({
                 if (!pages.includes(i)) pages.push(i);
             }
 
-            if (currentPage < totalPages - delta - 1) {
-                pages.push('...');
-            }
-
-            // Always show last page
+            if (currentPage < totalPages - delta - 1) pages.push('...');
             if (!pages.includes(totalPages)) pages.push(totalPages);
         }
-
         return pages;
     };
 
@@ -70,187 +50,103 @@ export default function Pagination({
     };
 
     return (
-        <div style={styles.container}>
+        <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            paddingTop: '1rem',
+            borderTop: '1px solid var(--border)',
+            marginTop: '1rem',
+        }}>
             {/* Items count */}
-            <div style={styles.itemsCount}>
-                Showing <strong>{startItem}-{endItem}</strong> of <strong>{totalItems}</strong>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                Showing <strong style={{ color: 'var(--text-primary)' }}>{startItem}-{endItem}</strong> of <strong style={{ color: 'var(--text-primary)' }}>{totalItems}</strong>
             </div>
 
-            {/* Page size selector */}
-            <div style={styles.pageSizeWrapper}>
-                <span style={styles.label}>Per page:</span>
-                <select
-                    value={pageSize}
-                    onChange={(e) => onPageSizeChange(parseInt(e.target.value, 10))}
-                    style={styles.select}
-                    disabled={loading}
-                >
-                    {pageSizeOptions.map(size => (
-                        <option key={size} value={size}>{size}</option>
-                    ))}
-                </select>
-            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                {/* Page size selector */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Rows per page:</span>
+                    <select
+                        value={pageSize}
+                        onChange={(e) => onPageSizeChange(parseInt(e.target.value, 10))}
+                        className="input-field"
+                        style={{ padding: '0.25rem 0.5rem', width: 'auto' }}
+                        disabled={loading}
+                    >
+                        {pageSizeOptions.map(size => (
+                            <option key={size} value={size}>{size}</option>
+                        ))}
+                    </select>
+                </div>
 
-            {/* Navigation controls */}
-            <div style={styles.navigation}>
-                {/* First & Previous */}
-                <button
-                    style={{ ...styles.navBtn, ...(currentPage === 1 ? styles.navBtnDisabled : {}) }}
-                    onClick={() => onPageChange(1)}
-                    disabled={currentPage === 1 || loading}
-                    title="First page"
-                >
-                    ««
-                </button>
-                <button
-                    style={{ ...styles.navBtn, ...(currentPage === 1 ? styles.navBtnDisabled : {}) }}
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage === 1 || loading}
-                    title="Previous page"
-                >
-                    «
-                </button>
+                {/* Navigation controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <button
+                        className="btn btn-secondary"
+                        style={{ padding: '0.4rem', opacity: currentPage === 1 ? 0.5 : 1 }}
+                        onClick={() => onPageChange(1)}
+                        disabled={currentPage === 1 || loading}
+                        title="First page"
+                    >
+                        <ChevronsLeft size={16} />
+                    </button>
+                    <button
+                        className="btn btn-secondary"
+                        style={{ padding: '0.4rem', opacity: currentPage === 1 ? 0.5 : 1 }}
+                        onClick={() => onPageChange(currentPage - 1)}
+                        disabled={currentPage === 1 || loading}
+                        title="Previous page"
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
 
-                {/* Page numbers */}
-                {getPageNumbers().map((page, idx) => (
-                    page === '...' ? (
-                        <span key={`ellipsis-${idx}`} style={styles.ellipsis}>...</span>
-                    ) : (
-                        <button
-                            key={page}
-                            style={{
-                                ...styles.pageBtn,
-                                ...(page === currentPage ? styles.pageBtnActive : {}),
-                            }}
-                            onClick={() => onPageChange(page)}
-                            disabled={loading || page === currentPage}
-                        >
-                            {page}
-                        </button>
-                    )
-                ))}
+                    <div style={{ display: 'flex', gap: '0.25rem', margin: '0 0.5rem' }}>
+                        {getPageNumbers().map((page, idx) => (
+                            page === '...' ? (
+                                <span key={`ellipsis-${idx}`} style={{ padding: '0 0.5rem', color: 'var(--text-muted)' }}>...</span>
+                            ) : (
+                                <button
+                                    key={page}
+                                    className={`btn ${page === currentPage ? 'btn-primary' : 'btn-secondary'}`}
+                                    style={{
+                                        padding: '0.4rem 0.8rem',
+                                        minWidth: '32px',
+                                        background: page === currentPage ? 'var(--primary)' : 'white',
+                                        color: page === currentPage ? 'white' : 'var(--text-primary)',
+                                        border: page === currentPage ? 'none' : '1px solid var(--border)'
+                                    }}
+                                    onClick={() => onPageChange(page)}
+                                    disabled={loading || page === currentPage}
+                                >
+                                    {page}
+                                </button>
+                            )
+                        ))}
+                    </div>
 
-                {/* Next & Last */}
-                <button
-                    style={{ ...styles.navBtn, ...(currentPage === totalPages ? styles.navBtnDisabled : {}) }}
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages || loading}
-                    title="Next page"
-                >
-                    »
-                </button>
-                <button
-                    style={{ ...styles.navBtn, ...(currentPage === totalPages ? styles.navBtnDisabled : {}) }}
-                    onClick={() => onPageChange(totalPages)}
-                    disabled={currentPage === totalPages || loading}
-                    title="Last page"
-                >
-                    »»
-                </button>
-            </div>
-
-            {/* Jump to page */}
-            <div style={styles.jumpWrapper}>
-                <span style={styles.label}>Go to:</span>
-                <input
-                    type="number"
-                    min={1}
-                    max={totalPages}
-                    value={jumpToPage}
-                    onChange={(e) => setJumpToPage(e.target.value)}
-                    onKeyDown={handleJumpToPage}
-                    placeholder="#"
-                    style={styles.jumpInput}
-                    disabled={loading}
-                />
+                    <button
+                        className="btn btn-secondary"
+                        style={{ padding: '0.4rem', opacity: currentPage === totalPages ? 0.5 : 1 }}
+                        onClick={() => onPageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages || loading}
+                        title="Next page"
+                    >
+                        <ChevronRight size={16} />
+                    </button>
+                    <button
+                        className="btn btn-secondary"
+                        style={{ padding: '0.4rem', opacity: currentPage === totalPages ? 0.5 : 1 }}
+                        onClick={() => onPageChange(totalPages)}
+                        disabled={currentPage === totalPages || loading}
+                        title="Last page"
+                    >
+                        <ChevronsRight size={16} />
+                    </button>
+                </div>
             </div>
         </div>
     );
 }
-
-const styles = {
-    container: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 16,
-        padding: '16px 0',
-        borderTop: '1px solid #e2e8f0',
-        marginTop: 16,
-    },
-    itemsCount: {
-        fontSize: '0.85rem',
-        color: '#64748b',
-    },
-    pageSizeWrapper: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-    },
-    label: {
-        fontSize: '0.85rem',
-        color: '#64748b',
-    },
-    select: {
-        padding: '6px 10px',
-        borderRadius: 6,
-        border: '1px solid #cbd5e1',
-        fontSize: '0.85rem',
-        cursor: 'pointer',
-    },
-    navigation: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 4,
-    },
-    navBtn: {
-        background: '#f1f5f9',
-        border: '1px solid #e2e8f0',
-        borderRadius: 6,
-        padding: '6px 10px',
-        cursor: 'pointer',
-        fontSize: '0.9rem',
-        fontWeight: 600,
-        color: '#475569',
-        transition: 'all 0.2s',
-    },
-    navBtnDisabled: {
-        opacity: 0.5,
-        cursor: 'not-allowed',
-    },
-    pageBtn: {
-        background: '#fff',
-        border: '1px solid #e2e8f0',
-        borderRadius: 6,
-        padding: '6px 12px',
-        cursor: 'pointer',
-        fontSize: '0.85rem',
-        color: '#475569',
-        minWidth: 36,
-        transition: 'all 0.2s',
-    },
-    pageBtnActive: {
-        background: '#2563eb',
-        color: '#fff',
-        border: '1px solid #2563eb',
-        fontWeight: 600,
-    },
-    ellipsis: {
-        padding: '0 6px',
-        color: '#94a3b8',
-    },
-    jumpWrapper: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-    },
-    jumpInput: {
-        width: 50,
-        padding: '6px 8px',
-        borderRadius: 6,
-        border: '1px solid #cbd5e1',
-        fontSize: '0.85rem',
-        textAlign: 'center',
-    },
-};

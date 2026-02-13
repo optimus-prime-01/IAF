@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import api from '../utils/api';
+import { useNotifications, NotificationToast } from '../hooks/useNotifications';
 
 export default function Login({ onLoginSuccess, onForgotPassword }) {
     const [step, setStep] = useState(1); // 1: password, 2: OTP
@@ -17,6 +18,8 @@ export default function Login({ onLoginSuccess, onForgotPassword }) {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const { notifications, addNotification, removeNotification } = useNotifications();
 
     // Refs for OTP input boxes
     const otpRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
@@ -81,7 +84,7 @@ export default function Login({ onLoginSuccess, onForgotPassword }) {
             setStep(2);
             if (res.data.data && res.data.data.otp) {
                 console.log("DEV MODE OTP:", res.data.data.otp);
-                alert(`[DEV MODE] Your OTP is: ${res.data.data.otp}`);
+                addNotification(`[DEV MODE] Your OTP is: ${res.data.data.otp}`, 'success', 10000);
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Invalid credentials');
@@ -126,6 +129,7 @@ export default function Login({ onLoginSuccess, onForgotPassword }) {
 
     return (
         <div style={styles.container}>
+            <NotificationToast notifications={notifications} onRemove={removeNotification} />
             <div style={styles.card}>
                 <img src="/iaf.png" alt="IAF Logo" style={styles.logo} />
                 <h2 style={styles.title}>VayuReader Admin</h2>

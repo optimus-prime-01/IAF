@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from './components/Navbar';
+import { motion } from 'framer-motion';
+import Sidebar from './components/Sidebar';
 import PdfManager from './components/PdfManager';
 import DictionaryManager from './components/DictionaryUploader';
 import AbbreviationUploader from './components/AbbreviationUploader';
@@ -28,10 +29,11 @@ export default function Dashboard({ user, onLogout }) {
   const [view, setView] = useState(getInitialView);
   const [pdfToHighlight, setPdfToHighlight] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     // Simulate short loading delay
-    const timer = setTimeout(() => setIsLoading(false), 500);
+    const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
@@ -49,19 +51,32 @@ export default function Dashboard({ user, onLogout }) {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        background: '#f7f9fb',
+        background: 'var(--bg-app)',
       }}>
-        <img
-          src="/iaf.png"
-          alt="Loading..."
-          style={{
-            width: '120px',
-            height: '120px',
-            objectFit: 'contain',
-            opacity: 0.8,
-            animation: 'pulse 1.5s infinite ease-in-out'
-          }}
-        />
+        <div style={{ position: 'relative' }}>
+          <img
+            src="/iaf.png"
+            alt="Loading..."
+            style={{
+              width: '100px',
+              height: '100px',
+              objectFit: 'contain',
+              animation: 'pulse 2s infinite ease-in-out'
+            }}
+          />
+          <div style={{
+            position: 'absolute',
+            inset: -20,
+            borderRadius: '50%',
+            border: '2px solid transparent',
+            borderTopColor: 'var(--primary)',
+            animation: 'spin 1s linear infinite'
+          }} />
+        </div>
+        <style>{`
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.95); } }
+        `}</style>
       </div>
     );
   }
@@ -91,25 +106,56 @@ export default function Dashboard({ user, onLogout }) {
 
   const getTitle = () => {
     const titles = {
-      pdf: '📄 PDF Manager',
-      dictionary: '📘 Dictionary',
-      abbreviation: '🔤 Abbreviations',
-      admins: '👥 Admin Management',
-      adminAudit: '📋 Admin Audit Logs',
-      userAudit: '👁️ User Activity Logs'
+      pdf: 'PDF Manager',
+      dictionary: 'Dictionary',
+      abbreviation: 'Abbreviations',
+      admins: 'Admin Management',
+      adminAudit: 'Admin Audit Logs',
+      userAudit: 'User Activity Logs'
     };
     return titles[view] || '';
   };
 
   return (
-    <div style={{ background: '#f7f9fb', minHeight: '100vh' }}>
-      <Navbar currentView={view} setView={setView} user={user} onLogout={onLogout} />
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 24, color: '#222' }}>
-          {getTitle()}
-        </h2>
-        {renderView()}
-      </div>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-app)' }}>
+      <Sidebar
+        currentView={view}
+        setView={setView}
+        user={user}
+        onLogout={onLogout}
+        isCollapsed={isSidebarCollapsed}
+        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      />
+
+      <motion.div
+        initial={false}
+        animate={{ marginLeft: isSidebarCollapsed ? 80 : 280 }}
+        transition={{ duration: 0.1, ease: "easeInOut" }}
+        style={{ padding: '2rem', minHeight: '100vh' }}
+      >
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <motion.div
+            key={view}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <h2 style={{
+              fontSize: '2rem',
+              fontWeight: 700,
+              marginBottom: '2rem',
+              color: 'var(--text-primary)',
+              fontFamily: "'Outfit', sans-serif"
+            }}>
+              {getTitle()}
+            </h2>
+
+            <div className="view-container">
+              {renderView()}
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -118,13 +164,26 @@ function NoAccess() {
   return (
     <div style={{
       textAlign: 'center',
-      padding: 60,
-      background: '#fff',
-      borderRadius: 12,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      padding: '4rem',
+      background: 'white',
+      borderRadius: 'var(--radius-lg)',
+      boxShadow: 'var(--shadow-sm)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '1rem'
     }}>
-      <h3 style={{ color: '#dc2626', marginBottom: 12 }}>🚫 Access Denied</h3>
-      <p style={{ color: '#6b7280' }}>You don't have permission to access this section.</p>
+      <div style={{
+        width: 64, height: 64,
+        background: '#fee2e2',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '2rem'
+      }}>🚫</div>
+      <h3 style={{ color: '#dc2626', fontSize: '1.25rem', fontWeight: 600 }}>Access Denied</h3>
+      <p style={{ color: 'var(--text-secondary)' }}>You don't have permission to access this section.</p>
     </div>
   );
 }
