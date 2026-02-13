@@ -109,12 +109,11 @@ app.use('/api', apiLimiter);
 // Request timeout (30 seconds default)
 app.use('/api', requestTimeout(30000));
 
-// Static file serving for uploads
-// Set Content-Disposition to prevent inline rendering of potentially dangerous files
-app.use('/uploads', (req, res, next) => {
-    res.setHeader('Content-Disposition', 'attachment');
-    next();
-}, express.static(path.join(__dirname, '..', 'uploads')));
+// SECURITY: Static file serving for /uploads has been replaced with authenticated serving.
+// Files go through unifiedAuth middleware to prevent unauthenticated access.
+const { unifiedAuth } = require('./middleware/adminAuth');
+const { serveFile } = require('./controllers/pdf.controller');
+app.get('/uploads/:folder/:filename', unifiedAuth, serveFile);
 
 // =============================================================================
 // ROUTES

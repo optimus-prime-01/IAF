@@ -129,7 +129,16 @@ router.get(
     pdfController.getPdfById
 );
 
-
+/**
+ * GET /api/pdfs/file/:folder/:filename
+ * Serve uploaded files (PDFs and thumbnails) with authentication.
+ * This replaces direct static file access to prevent unauthenticated downloads.
+ */
+router.get(
+    '/file/:folder/:filename',
+    unifiedAuth,
+    pdfController.serveFile
+);
 
 /**
  * POST /api/pdfs/upload

@@ -8,6 +8,8 @@
 
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
+const { createReadStream } = require('fs');
 const PdfDocument = require('../models/PdfDocument');
 const { logCreate, logUpdate, logDelete, logRead, RESOURCE_TYPES } = require('../services/audit.service');
 const { publishPdfEvent, PDF_EVENTS } = require('../services/pubsub.service');
@@ -412,6 +414,88 @@ const deletePdf = async (req, res, next) => {
     }
 };
 
+/**
+ * Serve a PDF file after authentication.
+ * The file path is validated against the database to ensure it belongs to a real document.
+ * This prevents direct unauthenticated access to uploaded files.
+ */
+const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
+
+const serveFile = async (req, res, next) => {
+    try {
+        // Reconstruct the URL path from params
+        const requestedPath = `/uploads/${req.params.folder}/${req.params.filename}`;
+
+        // Validate that this file belongs to a real PDF document
+        const pdf = await PdfDocument.findOne({
+            $or: [
+                { pdfUrl: requestedPath },
+                { thumbnail: requestedPath }
+            ]
+        }).lean();
+
+        if (!pdf) {
+            return response.notFound(res, 'File not found');
+        }
+
+        // Resolve the absolute path and prevent directory traversal
+        const absolutePath = path.resolve(UPLOAD_DIR, req.params.folder, req.params.filename);
+        if (!absolutePath.startsWith(path.resolve(UPLOAD_DIR))) {
+            return response.forbidden(res, 'Access denied');
+        }
+
+        // Check file exists on disk
+        if (!fsSync.existsSync(absolutePath)) {
+            return response.notFound(res, 'File not found on disk');
+        }
+
+        // Determine content type
+        const ext = path.extname(req.params.filename).toLowerCase();
+        const mimeTypes = {
+            '.pdf': 'application/pdf',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.webp': 'image/webp',
+            '.gif': 'image/gif'
+        };
+        const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+        // Get file stats for Content-Length and range support
+        const stat = fsSync.statSync(absolutePath);
+
+        // Support byte-range requests (important for PDF viewers)
+        const range = req.headers.range;
+        if (range) {
+            const parts = range.replace(/bytes=/, '').split('-');
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+            const chunkSize = end - start + 1;
+
+            res.writeHead(206, {
+                'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+                'Accept-Ranges': 'bytes',
+                'Content-Length': chunkSize,
+                'Content-Type': contentType,
+                'Cache-Control': 'private, max-age=3600'
+            });
+
+            createReadStream(absolutePath, { start, end }).pipe(res);
+        } else {
+            res.writeHead(200, {
+                'Content-Length': stat.size,
+                'Content-Type': contentType,
+                'Accept-Ranges': 'bytes',
+                'Cache-Control': 'private, max-age=3600'
+            });
+
+            createReadStream(absolutePath).pipe(res);
+        }
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     searchPdfs,
     getAllPdfs,
@@ -420,5 +504,6 @@ module.exports = {
     uploadPdf,
     updatePdf,
     deletePdf,
-    getCategories
+    getCategories,
+    serveFile
 };
