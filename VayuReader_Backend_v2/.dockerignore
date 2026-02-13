@@ -24,3 +24,8 @@ Thumbs.db
 # IDE
 .vscode
 .idea
+
+# Sensitive files that should never be in Docker images
+nginx/certs/
+uploads/
+docs/
