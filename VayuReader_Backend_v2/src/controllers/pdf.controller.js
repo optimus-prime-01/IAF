@@ -141,10 +141,6 @@ const getCategories = async (req, res, next) => {
 const getPdfById = async (req, res, next) => {
     try {
         let pdf;
-        console.log('getPdfById debug - ID:', req.params.id);
-        console.log('getPdfById debug - req.admin:', req.admin ? 'Yes' : 'No');
-        console.log('getPdfById debug - req.user:', req.user ? 'Yes' : 'No');
-        console.log('getPdfById debug - headers:', JSON.stringify(req.headers));
 
         // If admin, just fetch without incrementing view count
         if (req.admin) {
@@ -325,6 +321,16 @@ const updatePdf = async (req, res, next) => {
             { new: true, runValidators: true }
         );
 
+        // Clean up old files that were replaced
+        if (pdfFile && oldDoc.pdfUrl) {
+            const oldPdfPath = path.join(__dirname, '..', '..', oldDoc.pdfUrl);
+            fs.unlink(oldPdfPath).catch(() => { });
+        }
+        if (thumbnailFile && oldDoc.thumbnail) {
+            const oldThumbPath = path.join(__dirname, '..', '..', oldDoc.thumbnail);
+            fs.unlink(oldThumbPath).catch(() => { });
+        }
+
         await logUpdate(RESOURCE_TYPES.PDF, updated._id, req.admin, {
             old: { title: oldDoc.title },
             new: { title: updated.title }
@@ -470,6 +476,13 @@ const serveFile = async (req, res, next) => {
             const parts = range.replace(/bytes=/, '').split('-');
             const start = parseInt(parts[0], 10);
             const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+
+            // Validate range bounds
+            if (isNaN(start) || isNaN(end) || start < 0 || end >= stat.size || start > end) {
+                res.writeHead(416, { 'Content-Range': `bytes */${stat.size}` });
+                return res.end();
+            }
+
             const chunkSize = end - start + 1;
 
             res.writeHead(206, {
