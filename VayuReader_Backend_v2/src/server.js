@@ -76,8 +76,15 @@ app.use(hpp());
 app.use(mongoSanitize());
 
 
-// Response Compression
-app.use(compression());
+// Response Compression (skip for SSE - compression buffers small chunks, blocking real-time events)
+app.use(compression({
+    filter: (req, res) => {
+        const accept = req.headers['accept'] || '';
+        if (accept.includes('text/event-stream')) return false;
+        return compression.filter(req, res);
+    }
+}));
+
 
 // CORS
 app.use(cors(corsOptions));
@@ -103,17 +110,28 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // Trim whitespace from string fields
 app.use(trimFields);
 
-// Rate limiting on all API routes
-app.use('/api', apiLimiter);
+// Rate limiting on all API routes (except SSE - it's a single long-lived connection)
+app.use('/api', (req, res, next) => {
+    // Skip rate limiting and timeout for SSE endpoint
+    if (req.path === '/events' || req.url.startsWith('/events')) {
+        return next();
+    }
+    apiLimiter(req, res, next);
+});
 
-// Request timeout (30 seconds default)
-app.use('/api', requestTimeout(30000));
+// Request timeout (30 seconds default) - skip for SSE which is long-lived
+app.use('/api', (req, res, next) => {
+    if (req.path === '/events' || req.url.startsWith('/events')) {
+        return next();
+    }
+    requestTimeout(30000)(req, res, next);
+});
 
 // SECURITY: Static file serving for /uploads has been replaced with authenticated serving.
 // Files go through unifiedAuth middleware to prevent unauthenticated access.
 const { unifiedAuth } = require('./middleware/adminAuth');
 const { serveFile } = require('./controllers/pdf.controller');
-app.get('/uploads/:folder/:filename', unifiedAuth, serveFile);
+app.get('/uploads/:folder/:filename', apiLimiter, unifiedAuth, serveFile);
 
 // =============================================================================
 // ROUTES

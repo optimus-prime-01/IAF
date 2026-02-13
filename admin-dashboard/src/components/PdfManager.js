@@ -57,30 +57,34 @@ export default function PdfManager(props) {
 
   // SSE Event Handlers
   const handlePdfAdded = useCallback((data) => {
-    // If on page 1 with no filters, refresh to show new PDF
-    if (currentPage === 1 && !searchTerm && !selectedFilterCategory) {
-      // Refresh the list to get the new PDF
-      api.get('/api/pdfs/all', { params: { page: 1, limit: DEFAULT_PAGE_SIZE } })
+    // SSE events only contain { id } for security - refresh list to get full data
+    api.get('/api/pdfs/all', { params: { page: currentPage, limit: pageSize, search: searchTerm || undefined, category: selectedFilterCategory || undefined } })
+      .then(res => {
+        const resData = res.data.data || res.data;
+        if (resData.documents) {
+          setPdfs(resData.documents);
+          setTotal(resData.pagination.total);
+          setTotalPages(resData.pagination.totalPages);
+        }
+      })
+      .catch(console.error);
+    addNotification('📄 New PDF added', 'success');
+    fetchCategories();
+  }, [currentPage, pageSize, searchTerm, selectedFilterCategory, addNotification]);
+
+  const handlePdfUpdated = useCallback((data) => {
+    // Fetch the updated PDF to get fresh data
+    if (data.id) {
+      api.get(`/api/pdfs/admin/${data.id}`)
         .then(res => {
-          const resData = res.data.data || res.data;
-          if (resData.documents) {
-            setPdfs(resData.documents);
-            setTotal(resData.pagination.total);
-            setTotalPages(resData.pagination.totalPages);
-          }
+          const updatedPdf = res.data.data || res.data;
+          setPdfs(prev => prev.map(pdf =>
+            pdf._id === data.id ? { ...pdf, ...updatedPdf } : pdf
+          ));
         })
         .catch(console.error);
     }
-    addNotification(`📄 New PDF added: "${data.title}"`, 'success');
-    fetchCategories(); // Update categories in case it's a new one
-  }, [currentPage, searchTerm, selectedFilterCategory, addNotification]);
-
-  const handlePdfUpdated = useCallback((data) => {
-    // Update the PDF in the current list if it exists
-    setPdfs(prev => prev.map(pdf =>
-      pdf._id === data.id ? { ...pdf, title: data.title, category: data.category } : pdf
-    ));
-    addNotification(`✏️ PDF updated: "${data.title}"`, 'info');
+    addNotification('✏️ PDF updated', 'info');
     fetchCategories();
   }, [addNotification]);
 
@@ -88,16 +92,16 @@ export default function PdfManager(props) {
     // Remove the PDF from the current list
     setPdfs(prev => prev.filter(pdf => pdf._id !== data.id));
     setTotal(prev => Math.max(0, prev - 1));
-    addNotification(`🗑️ PDF deleted: "${data.title}"`, 'warning');
+    addNotification('🗑️ PDF deleted', 'warning');
     fetchCategories();
   }, [addNotification]);
 
-  // Subscribe to SSE events (DISABLED - set enabled: true to re-enable)
-  usePdfEvents({
+  // Subscribe to SSE events for real-time updates
+  const { isConnected, connectionError } = usePdfEvents({
     onPdfAdded: handlePdfAdded,
     onPdfUpdated: handlePdfUpdated,
     onPdfDeleted: handlePdfDeleted,
-    enabled: false,  // Disabled SSE
+    enabled: true,
   });
 
   // Fetch unique categories (for dropdowns)
@@ -324,18 +328,16 @@ export default function PdfManager(props) {
       {/* Toast Notifications */}
       <NotificationToast notifications={notifications} onRemove={removeNotification} />
 
-      {/* Connection Status - Disabled since SSE is off */}
-      {/* 
+      {/* Connection Status */}
       <div style={styles.connectionStatus}>
         <span style={{
           ...styles.connectionDot,
           background: isConnected ? '#22c55e' : connectionError ? '#ef4444' : '#f59e0b'
         }} />
         <span style={styles.connectionText}>
-          {isConnected ? 'Live updates active' : connectionError ? 'Reconnecting...' : 'Connecting...'}
+          {isConnected ? 'Live updates active' : connectionError ? `Connection error: ${connectionError}` : 'Connecting...'}
         </span>
       </div>
-      */}
 
       <h2>Upload PDF</h2>
       <input

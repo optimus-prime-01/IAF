@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { PDF_BASE_URL } from '@/constants/config';
 import EventSource from 'react-native-sse';
+import { getToken } from '@/lib/authStorage';
 
 // Define supported event types
 export type PdfEventType = 'connected' | 'PDF_ADDED' | 'PDF_UPDATED' | 'PDF_DELETED';
@@ -29,6 +30,7 @@ type CustomEvents = 'connected' | 'PDF_ADDED' | 'PDF_UPDATED' | 'PDF_DELETED' | 
 /**
  * Hook to subscribe to Server-Sent Events for PDF updates.
  * Uses react-native-sse for React Native compatibility.
+ * Sends JWT token via Authorization header for authenticated access.
  * 
  * @param onEvent Callback function to handle incoming events
  * @param dependencies Optional dependency array to re-subscribe if changed
@@ -43,10 +45,17 @@ export const usePdfEvents = (
         let es: EventSource<CustomEvents> | null = null;
         let isMounted = true;
 
-        const connect = () => {
+        const connect = async () => {
             // Ensure we have a valid URL
             if (!PDF_BASE_URL) {
                 console.warn('[SSE] No PDF_BASE_URL configured');
+                return;
+            }
+
+            // Get auth token for authenticated SSE connection
+            const token = await getToken();
+            if (!token) {
+                console.warn('[SSE] No auth token available, skipping SSE connection');
                 return;
             }
 
@@ -55,9 +64,11 @@ export const usePdfEvents = (
 
             try {
                 // Create EventSource connection using react-native-sse
+                // Send JWT via Authorization header for authentication
                 es = new EventSource<CustomEvents>(url, {
                     headers: {
                         'Accept': 'text/event-stream',
+                        'Authorization': `Bearer ${token}`,
                     },
                     // Explicitly set line ending character for proper SSE parsing
                     lineEndingCharacter: '\n',
@@ -73,10 +84,9 @@ export const usePdfEvents = (
                 // Handle 'connected' event
                 es.addEventListener('connected', (event) => {
                     if (!isMounted) return;
-                    console.log('[SSE] Received connected event, raw data:', event.data);
+                    console.log('[SSE] Received connected event');
                     try {
                         const data = event.data ? JSON.parse(event.data) : {};
-                        console.log('[SSE] Parsed connected data:', data);
                         onEvent({ type: 'connected', data });
                     } catch (e) {
                         console.error('[SSE] Failed to parse connected event', e);
@@ -88,7 +98,7 @@ export const usePdfEvents = (
                     if (!isMounted) return;
                     try {
                         const data = event.data ? JSON.parse(event.data) : {};
-                        console.log('[SSE] PDF Added:', data.title);
+                        console.log('[SSE] PDF Added:', data.id);
                         onEvent({ type: 'PDF_ADDED', data });
                     } catch (e) {
                         console.error('[SSE] Failed to parse PDF_ADDED event', e);
@@ -100,7 +110,7 @@ export const usePdfEvents = (
                     if (!isMounted) return;
                     try {
                         const data = event.data ? JSON.parse(event.data) : {};
-                        console.log('[SSE] PDF Updated:', data.title);
+                        console.log('[SSE] PDF Updated:', data.id);
                         onEvent({ type: 'PDF_UPDATED', data });
                     } catch (e) {
                         console.error('[SSE] Failed to parse PDF_UPDATED event', e);
@@ -112,7 +122,7 @@ export const usePdfEvents = (
                     if (!isMounted) return;
                     try {
                         const data = event.data ? JSON.parse(event.data) : {};
-                        console.log('[SSE] PDF Deleted:', data.title);
+                        console.log('[SSE] PDF Deleted:', data.id);
                         onEvent({ type: 'PDF_DELETED', data });
                     } catch (e) {
                         console.error('[SSE] Failed to parse PDF_DELETED event', e);

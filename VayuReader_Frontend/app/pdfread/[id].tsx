@@ -6,6 +6,7 @@ import Pdf from 'react-native-pdf';
 
 import { PDF_BASE_URL } from '@/constants/config';
 import apiClient from '@/lib/apiClient';
+import { getToken } from '@/lib/authStorage';
 
 type PdfDocument = {
   _id: string;
@@ -22,6 +23,7 @@ export default function PdfDetails() {
   const [doc, setDoc] = useState<PdfDocument | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const navigation = useNavigation();
 
   useLayoutEffect(() => {
@@ -33,6 +35,11 @@ export default function PdfDetails() {
       });
     }
   }, [doc, navigation]);
+
+  useEffect(() => {
+    // Fetch auth token for authenticated file access
+    getToken().then(setToken);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -72,6 +79,7 @@ export default function PdfDetails() {
   const pdfSource = {
     uri: `${PDF_BASE_URL}${doc.pdfUrl}`,
     cache: true,
+    ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
   };
 
   return (

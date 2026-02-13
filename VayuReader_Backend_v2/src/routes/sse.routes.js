@@ -23,8 +23,12 @@ const { unifiedAuth } = require('../middleware/adminAuth');
  * GET /api/events
  * Establish SSE connection for real-time PDF updates.
  * 
- * Note: Authentication removed because EventSource doesn't support
- * custom headers easily. PDF metadata events are not sensitive.
+ * Authentication is required. Since browser EventSource doesn't support
+ * custom headers, the token can be passed as a query parameter:
+ *   /api/events?token=<jwt>
+ * 
+ * For React Native (react-native-sse), the token is sent via headers.
+ * For browser admin dashboard, cookies are sent automatically with withCredentials.
  * 
  * Events:
  * - connected: Initial connection confirmation
@@ -34,6 +38,14 @@ const { unifiedAuth } = require('../middleware/adminAuth');
  */
 router.get(
     '/',
+    // Bridge query-param token into Authorization header for EventSource compatibility
+    (req, res, next) => {
+        if (req.query.token && !req.headers.authorization && !(req.cookies && (req.cookies.admin_token || req.cookies.auth_token))) {
+            req.headers.authorization = `Bearer ${req.query.token}`;
+        }
+        next();
+    },
+    unifiedAuth,
     sseController.connectToEvents
 );
 

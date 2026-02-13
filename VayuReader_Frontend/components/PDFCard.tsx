@@ -1,14 +1,23 @@
 import { Link } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 import { PDF_BASE_URL } from '@/constants/config';
+import { getToken } from '@/lib/authStorage';
 
 const PDFCard = React.memo(({ _id, title, createdAt, thumbnail, cardWidth, category }: PDF & { cardWidth?: number }) => {
-  const thumbnailUri = thumbnail
-    ? { uri: `${PDF_BASE_URL}${thumbnail}` }
-    : { uri: 'https://placehold.co/600x800' };
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    getToken().then(setToken);
+  }, []);
+
+  const thumbnailSource = thumbnail && token
+    ? { uri: `${PDF_BASE_URL}${thumbnail}`, headers: { Authorization: `Bearer ${token}` } }
+    : thumbnail
+      ? { uri: `${PDF_BASE_URL}${thumbnail}` }
+      : { uri: 'https://placehold.co/600x800' };
 
   return (
     <Link
@@ -21,7 +30,7 @@ const PDFCard = React.memo(({ _id, title, createdAt, thumbnail, cardWidth, categ
         onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
       >
         <Image
-          source={thumbnailUri}
+          source={thumbnailSource}
           className="w-full h-40 rounded-lg"
           resizeMode="cover"
         />
