@@ -14,6 +14,7 @@ const { hashPassword, comparePassword } = require('../services/password.service'
 const { logAction, RESOURCE_TYPES, ACTION_TYPES } = require('../services/audit.service');
 const response = require('../utils/response');
 const { sanitizePhone, sanitizeName, escapeRegex } = require('../utils/sanitize');
+const { server } = require('../config/environment');
 
 // =============================================================================
 // AUTHENTICATION (Password + OTP 2FA with Login Token)
@@ -37,14 +38,14 @@ const requestLoginOtp = async (req, res, next) => {
         const admin = await Admin.findOne({ contact });
 
         if (!admin) {
-            console.log(`[AUTH DEBUG] Admin not found for contact: ${contact}`);
+
             // Use generic message to prevent user enumeration
             return response.unauthorized(res, 'Invalid credentials');
         }
 
         // Verify password (Factor 1: Something you know)
         const isPasswordValid = await comparePassword(password, admin.passwordHash);
-        console.log(`[AUTH DEBUG] Password check for ${contact}: ${isPasswordValid}`);
+
 
         if (!isPasswordValid) {
             return response.unauthorized(res, 'Invalid credentials');
@@ -115,7 +116,7 @@ const verifyLoginOtp = async (req, res, next) => {
 
         // Set JWT as HTTP-only cookie
         const isProduction = process.env.NODE_ENV === 'production';
-        const isTesting = process.env.TESTING === 'true';
+        const isTesting = server.isTesting;
         res.cookie('admin_token', token, {
             httpOnly: true,           // Prevents JavaScript access
             secure: isProduction || isTesting,  // HTTPS required for SameSite=none
@@ -418,7 +419,7 @@ const getCurrentAdmin = async (req, res, next) => {
  */
 const logout = (req, res) => {
     const isProduction = process.env.NODE_ENV === 'production';
-    const isTesting = process.env.TESTING === 'true';
+    const isTesting = server.isTesting;
     res.clearCookie('admin_token', {
         httpOnly: true,
         secure: isProduction || isTesting,

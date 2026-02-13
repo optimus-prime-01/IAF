@@ -13,6 +13,7 @@ const { sendOtpSms } = require('../services/sms.service');
 const { logLogin, logDeviceChange, logNameChange } = require('../services/userAudit.service');
 const response = require('../utils/response');
 const { sanitizePhone, sanitizeName } = require('../utils/sanitize');
+const { server } = require('../config/environment');
 
 /**
  * Request OTP for user login.
@@ -27,7 +28,7 @@ const requestLoginOtp = async (req, res, next) => {
         const name = sanitizeName(req.body.name);
         const { deviceId } = req.body;
 
-        console.log(`[AUTH] OTP Request - Phone: ${phoneNumber}, Name: ${name}, DeviceID: ${deviceId}`);
+
 
         // Validate deviceId is provided
         if (!deviceId || typeof deviceId !== 'string' || deviceId.trim() === '') {
@@ -111,7 +112,7 @@ const verifyLoginOtp = async (req, res, next) => {
         const phoneNumber = sanitizePhone(req.body.phone_number);
         const { otp, deviceId, loginToken } = req.body;
 
-        console.log(`[AUTH] OTP Verify - Phone: ${phoneNumber}, OTP: ${otp}, DeviceID: ${deviceId}`);
+
 
         // Validate required fields
         if (!deviceId || typeof deviceId !== 'string' || deviceId.trim() === '') {
@@ -177,7 +178,7 @@ const verifyLoginOtp = async (req, res, next) => {
         });
 
         // Set HTTP-only cookie with long expiration
-        const isTesting = process.env.TESTING === 'true';
+        const isTesting = server.isTesting;
         const oneHundredYearsMs = 100 * 365 * 24 * 60 * 60 * 1000;
 
         res.cookie('auth_token', token, {
@@ -205,7 +206,7 @@ const verifyLoginOtp = async (req, res, next) => {
  */
 const logout = async (req, res, next) => {
     try {
-        const isTesting = process.env.TESTING === 'true';
+        const isTesting = server.isTesting;
         res.cookie('auth_token', '', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production' || isTesting,

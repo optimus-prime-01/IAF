@@ -16,6 +16,7 @@ const { generateAdminToken } = require('../services/jwt.service');
 const { logUpdate, RESOURCE_TYPES } = require('../services/audit.service');
 const response = require('../utils/response');
 const { sanitizePhone } = require('../utils/sanitize');
+const { server } = require('../config/environment');
 
 /**
  * Get available security questions.
@@ -225,7 +226,7 @@ const resetPassword = async (req, res, next) => {
 
         // Set Cookie
         const isProduction = process.env.NODE_ENV === 'production';
-        const isTesting = process.env.TESTING === 'true';
+        const isTesting = server.isTesting;
         res.cookie('admin_token', token, {
             httpOnly: true,
             secure: isProduction || isTesting,
