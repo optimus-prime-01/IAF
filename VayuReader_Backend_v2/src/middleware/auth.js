@@ -77,7 +77,7 @@ const authenticateUser = async (req, res, next) => {
  * @param {Object} res - Express response
  * @param {Function} next - Next middleware
  */
-const optionalAuth = (req, res, next) => {
+const optionalAuth = async (req, res, next) => {
     let token;
 
     // Check cookie first
@@ -97,12 +97,16 @@ const optionalAuth = (req, res, next) => {
         const decoded = verifyToken(token);
 
         if (decoded.type === 'user') {
-            req.user = {
-                userId: decoded.userId,
-                phone_number: decoded.phone_number,
-                deviceId: decoded.deviceId,
-                name: decoded.name
-            };
+            // Validate user still exists and is not blocked
+            const user = await User.findById(decoded.userId).select('isBlocked');
+            if (user && !user.isBlocked) {
+                req.user = {
+                    userId: decoded.userId,
+                    phone_number: decoded.phone_number,
+                    deviceId: decoded.deviceId,
+                    name: decoded.name
+                };
+            }
         } else if (decoded.type === 'admin') {
             req.admin = decoded;
         }

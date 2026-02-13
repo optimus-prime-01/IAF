@@ -8,6 +8,7 @@
 
 const { verifyToken } = require('../services/jwt.service');
 const response = require('../utils/response');
+const User = require('../models/User');
 
 /**
  * Authenticates an admin via JWT token.
@@ -188,6 +189,15 @@ const unifiedAuth = async (req, res, next) => {
             const readOnlyMethods = ['GET', 'HEAD', 'OPTIONS'];
             if (!readOnlyMethods.includes(req.method)) {
                 return response.forbidden(res, 'Users can only perform read operations');
+            }
+
+            // Validate user still exists and is not blocked
+            const user = await User.findById(decoded.userId).select('isBlocked');
+            if (!user) {
+                return response.unauthorized(res, 'User no longer exists');
+            }
+            if (user.isBlocked) {
+                return response.unauthorized(res, 'User is blocked');
             }
 
             req.user = { userId: decoded.userId };
