@@ -51,7 +51,10 @@ validateEnv();
 const server = {
     port: parseInt(process.env.PORT || '3000', 10),
     nodeEnv: process.env.NODE_ENV || 'development',
-    isDevelopment: process.env.NODE_ENV !== 'production'
+    isDevelopment: process.env.NODE_ENV !== 'production',
+    // SECURITY: TESTING mode is NEVER allowed in production to prevent
+    // SameSite=None cookies which would disable CSRF protection.
+    isTesting: process.env.TESTING === 'true' && process.env.NODE_ENV !== 'production'
 };
 
 /**
