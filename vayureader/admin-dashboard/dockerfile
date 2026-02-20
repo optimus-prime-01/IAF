@@ -25,5 +25,8 @@ COPY --from=build /app/build /usr/share/nginx/html
 # Expose port 80 (default HTTP port for Nginx)
 EXPOSE 80
 
+# Configure NGINX for React SPA (fallback mapping to index.html)
+RUN echo "server { listen 80; location / { root /usr/share/nginx/html; index index.html; try_files \$uri \$uri/ /index.html; } }" > /etc/nginx/conf.d/default.conf
+
 # Start Nginx
 CMD ["nginx", "-g", "daemon off;"]

@@ -2,6 +2,18 @@ version: '3.8'
 
 services:
   # ============================================================================
+  # ADMIN DASHBOARD
+  # ============================================================================
+  admin-dashboard:
+    build:
+      context: ./admin-dashboard
+      dockerfile: dockerfile
+    container_name: vayureader_admin
+    restart: unless-stopped
+    networks:
+      - backend-network
+
+  # ============================================================================
   # APP SERVICE (Node.js Backend)
   # ============================================================================
   app:
@@ -81,6 +93,8 @@ services:
     depends_on:
       app:
         condition: service_healthy
+      admin-dashboard:
+        condition: service_started
     networks:
       - backend-network
 
