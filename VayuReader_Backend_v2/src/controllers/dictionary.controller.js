@@ -377,20 +377,23 @@ const uploadDictionary = async (req, res, next) => {
             }
         }
 
-        // Sync to Elasticsearch (fetch inserted docs with _id for ES indexing)
-        try {
-            const insertedWords = await Word.find({ word: { $in: words.map(w => w.word) } }).lean();
-            if (insertedWords.length > 0) {
-                await bulkIndexWords(insertedWords);
-                console.log(`[ES] Indexed ${insertedWords.length} words`);
+        // Fire-and-forget ES sync so large uploads are not blocked by indexing latency.
+        void (async () => {
+            try {
+                const insertedWords = await Word.find({ word: { $in: words.map(w => w.word) } }).lean();
+                if (insertedWords.length > 0) {
+                    await bulkIndexWords(insertedWords);
+                    console.log(`[ES] Indexed ${insertedWords.length} words`);
+                }
+            } catch (esError) {
+                console.error('[ES] Bulk index after upload failed:', esError.message);
             }
-        } catch (esError) {
-            console.error('[ES] Bulk index after upload failed:', esError.message);
-            // Don't fail the request - ES sync is non-critical
-        }
+        })();
 
-        // Invalidate all dictionary caches after bulk upload
-        await invalidateAllDictionaryCaches();
+        // Fire-and-forget cache invalidation so bulk upload is not blocked.
+        void invalidateAllDictionaryCaches().catch((cacheError) => {
+            console.error('Cache invalidation error (all dictionary):', cacheError.message);
+        });
 
         await logCreate(RESOURCE_TYPES.DICTIONARY, 'bulk-upload', req.admin, {
             count: insertedCount,

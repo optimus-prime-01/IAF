@@ -29,6 +29,8 @@ const invalidateWord = async (word) => {
         await redisClient.del(cacheKey);
         // Also invalidate the words preview list
         await redisClient.del('words:preview:100');
+        // Invalidate paginated dictionary list caches (if enabled)
+        await invalidateByPattern('words:all:*');
     } catch (error) {
         console.error('Cache invalidation error (word):', error.message);
     }
@@ -46,6 +48,8 @@ const invalidateAbbreviation = async (abbr) => {
         await redisClient.del('abbr:all');
         // Invalidate search caches (using pattern)
         await invalidateByPattern('abbr:search:*');
+        // Invalidate paginated/list abbreviation caches (if enabled)
+        await invalidateByPattern('abbr:list:*');
     } catch (error) {
         console.error('Cache invalidation error (abbreviation):', error.message);
     }
@@ -95,6 +99,7 @@ const invalidateAllDictionaryCaches = async () => {
     try {
         await invalidateByPattern('word:*');
         await redisClient.del('words:preview:100');
+        await invalidateByPattern('words:all:*');
     } catch (error) {
         console.error('Cache invalidation error (all dictionary):', error.message);
     }
@@ -106,6 +111,7 @@ const invalidateAllDictionaryCaches = async () => {
 const invalidateAllAbbreviationCaches = async () => {
     try {
         await invalidateByPattern('abbr:*');
+        await invalidateByPattern('abbr:list:*');
     } catch (error) {
         console.error('Cache invalidation error (all abbreviation):', error.message);
     }

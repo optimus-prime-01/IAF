@@ -279,18 +279,22 @@ const bulkUpload = async (req, res, next) => {
             message: 'Bulk upload abbreviations'
         });
 
-        // Sync to Elasticsearch
-        try {
-            if (result.length > 0) {
-                await bulkIndexAbbreviations(result);
-                console.log(`[ES] Indexed ${result.length} abbreviations`);
+        // Fire-and-forget ES sync so bulk upload is not blocked by indexing latency.
+        void (async () => {
+            try {
+                if (result.length > 0) {
+                    await bulkIndexAbbreviations(result);
+                    console.log(`[ES] Indexed ${result.length} abbreviations`);
+                }
+            } catch (esError) {
+                console.error('[ES] Bulk index abbreviations failed:', esError.message);
             }
-        } catch (esError) {
-            console.error('[ES] Bulk index abbreviations failed:', esError.message);
-        }
+        })();
 
-        // Invalidate all abbreviation caches after bulk upload
-        await invalidateAllAbbreviationCaches();
+        // Fire-and-forget cache invalidation so bulk upload is not blocked.
+        void invalidateAllAbbreviationCaches().catch((cacheError) => {
+            console.error('Cache invalidation error (all abbreviation):', cacheError.message);
+        });
 
         response.created(res, { count: result.length }, `Successfully uploaded ${result.length} abbreviations`);
     } catch (error) {
@@ -304,8 +308,10 @@ const bulkUpload = async (req, res, next) => {
                 duplicatesSkipped: abbreviations.length - insertedCount
             });
 
-            // Still invalidate cache even for partial success
-            await invalidateAllAbbreviationCaches();
+            // Still invalidate cache even for partial success (non-blocking)
+            void invalidateAllAbbreviationCaches().catch((cacheError) => {
+                console.error('Cache invalidation error (all abbreviation):', cacheError.message);
+            });
             return response.success(res, { count: insertedCount }, `Uploaded ${insertedCount} abbreviations (duplicates skipped)`);
         }
         next(error);
