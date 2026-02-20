@@ -1,0 +1,157 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # ADMIN DASHBOARD
+  # ============================================================================
+  admin-dashboard:
+    build:
+      context: ./admin-dashboard
+      dockerfile: dockerfile
+    container_name: vayureader_admin
+    restart: unless-stopped
+    networks:
+      - backend-network
+
+  # ============================================================================
+  # APP SERVICE (Node.js Backend)
+  # ============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: vayureader_api
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - redis
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongo:27017/vayureader
+      - MONGODB_TLS=false
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - PORT=5000
+      - ALLOWED_ORIGINS=http://localhost,https://localhost,http://localhost:3000,https://localhost:3000,http://localhost:3001,https://localhost:3001,http://127.0.0.1:3000,https://127.0.0.1:3000,https://localhost:5000,http://localhost:5000
+      - OTP_GATEWAY_URL=http://sms-simulator:8000/smsc/sends
+      - TESTING=true
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=200
+      - OTP_RATE_LIMIT_MAX=5
+      - OTP_MAX_ATTEMPTS=5
+      - JWT_LIFETIME_DAYS=36500
+      - JWT_EXPIRY_DAYS=1
+      - OTP_EXPIRY_MINUTES=5
+      - MONGODB_MAX_POOL_SIZE=50
+      - MONGODB_MIN_POOL_SIZE=5
+      - CLUSTER_WORKERS=4 # Leave empty to auto-detect CPU cores
+    networks:
+      - backend-network
+    volumes:
+      - ./uploads:/usr/src/app/uploads
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:5000/health" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ============================================================================
+  # SMS SIMULATOR (Mock Gateway)
+  # ============================================================================
+  sms-simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: vayureader_sms
+    restart: unless-stopped
+    command: [ "node", "scripts/sms-simulator.js" ]
+    profiles: [ "dev" ] # Only start if --profile dev is used
+    ports:
+      - "8000:8000" # Expose UI to host
+    networks:
+      - backend-network
+
+  # ============================================================================
+  # NGINX (Reverse Proxy & Gateway)
+  # ============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: vayureader_gateway
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./uploads:/usr/src/app/uploads:ro
+    depends_on:
+      app:
+        condition: service_healthy
+      admin-dashboard:
+        condition: service_started
+    networks:
+      - backend-network
+
+  # ============================================================================
+  # MONGODB
+  # ============================================================================
+  mongo:
+    image: mongo:6-jammy
+    container_name: vayureader_db
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - backend-network
+    # In production, binding to localhost is handled by network isolation
+    # command: ["mongod", "--bind_ip_all"]
+
+    # ============================================================================
+    # REDIS
+    # ============================================================================
+  redis:
+    image: redis:alpine
+    container_name: vayureader_cache
+    restart: unless-stopped
+    networks:
+      - backend-network
+
+  # ============================================================================
+  # ELASTICSEARCH (Search Engine)
+  # ============================================================================
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: vayureader_search
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# ==============================================================================
+# NETWORKS & VOLUMES
+# ==============================================================================
+networks:
+  backend-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  es-data:
