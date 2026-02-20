@@ -234,14 +234,16 @@ const uploadPdf = async (req, res, next) => {
         const pdfUrl = `/uploads/${req.folderName}/${pdfFile.filename}`;
 
         // Auto-generate thumbnail from PDF page 1 (server-side)
+        // If this fails, the PDF is likely corrupted or malicious — reject the upload
         let thumbnail;
         try {
             const uploadDir = path.join(__dirname, '..', '..', 'uploads', req.folderName);
             const result = await generateThumbnail(pdfFile.path, uploadDir);
             thumbnail = `/uploads/${req.folderName}/${result.thumbnailFilename}`;
         } catch (thumbError) {
-            console.warn('[Thumbnail] Auto-generation failed, saving PDF without thumbnail:', thumbError.message);
-            // PDF upload still succeeds even if thumbnail generation fails
+            // Clean up the uploaded PDF since we're rejecting
+            await fs.unlink(pdfFile.path).catch(() => { });
+            return response.badRequest(res, `PDF rejected: Unable to render page 1. The file may be corrupted or invalid. (${thumbError.message})`);
         }
 
         const newDoc = new PdfDocument({
@@ -323,7 +325,8 @@ const updatePdf = async (req, res, next) => {
                 const result = await generateThumbnail(pdfFile.path, uploadDir);
                 updateData.thumbnail = `/uploads/${req.folderName}/${result.thumbnailFilename}`;
             } catch (thumbError) {
-                console.warn('[Thumbnail] Auto-generation failed during update:', thumbError.message);
+                await fs.unlink(pdfFile.path).catch(() => { });
+                return response.badRequest(res, `PDF rejected: Unable to render page 1. The file may be corrupted or invalid. (${thumbError.message})`);
             }
         }
 
