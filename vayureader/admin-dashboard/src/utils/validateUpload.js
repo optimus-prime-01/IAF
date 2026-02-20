@@ -16,6 +16,7 @@ const DANGEROUS_PATTERNS = [
     /<object/gi,
     /<embed/gi,
 ];
+const DANGEROUS_CSV_PREFIX = /^[=+\-@]/;
 
 /**
  * Sanitize a string by removing dangerous content
@@ -30,6 +31,26 @@ export function sanitizeString(str) {
     // eslint-disable-next-line no-control-regex
     sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
     return sanitized.trim();
+}
+
+/**
+ * Prevent spreadsheet formula injection by prefixing dangerous cells.
+ */
+export function sanitizeCsvCell(value) {
+    if (typeof value !== 'string') return value;
+    if (DANGEROUS_CSV_PREFIX.test(value)) {
+        return `'${value}`;
+    }
+    return value;
+}
+
+/**
+ * Format value as a CSV-safe cell (formula-safe + quote-escaped + wrapped).
+ */
+export function formatCsvCell(value) {
+    const raw = String(value ?? '');
+    const safe = sanitizeCsvCell(raw);
+    return `"${safe.replace(/"/g, '""')}"`;
 }
 
 /**

@@ -6,7 +6,8 @@ import {
   validateFile,
   validateDictionaryData,
   parseDictionaryCSV,
-  sanitizeString
+  sanitizeString,
+  formatCsvCell
 } from '../utils/validateUpload';
 import Pagination from './Pagination';
 
@@ -282,11 +283,11 @@ export default function DictionaryUploader() {
       Object.entries(data).forEach(([word, wordData]) => {
         wordData.MEANINGS.forEach(m => {
           const row = [
-            `"${word.replace(/"/g, '""')}"`,
-            `"${(m[0] || '').replace(/"/g, '""')}"`,
-            `"${(m[1] || '').replace(/"/g, '""')}"`,
-            `"${(m[2] || []).join(';').replace(/"/g, '""')}"`,
-            `"${(wordData.ANTONYMS || []).join(';').replace(/"/g, '""')}"`
+            formatCsvCell(word),
+            formatCsvCell(m[0] || ''),
+            formatCsvCell(m[1] || ''),
+            formatCsvCell((m[2] || []).join(';')),
+            formatCsvCell((wordData.ANTONYMS || []).join(';'))
           ];
           csvRows.push(row.join(','));
         });

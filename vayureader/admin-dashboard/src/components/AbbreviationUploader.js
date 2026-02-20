@@ -6,7 +6,8 @@ import {
   validateFile,
   validateAbbreviationData,
   parseAbbreviationCSV,
-  sanitizeString
+  sanitizeString,
+  formatCsvCell
 } from '../utils/validateUpload';
 import Pagination from './Pagination';
 
@@ -246,8 +247,8 @@ export default function AbbreviationUploader() {
 
       data.forEach(item => {
         const row = [
-          `"${(item.abbreviation || '').replace(/"/g, '""')}"`,
-          `"${(item.fullForm || '').replace(/"/g, '""')}"`
+          formatCsvCell(item.abbreviation || ''),
+          formatCsvCell(item.fullForm || '')
         ];
         csvRows.push(row.join(','));
       });
