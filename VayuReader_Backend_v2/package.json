@@ -9,6 +9,7 @@
         "dev": "node --watch src/server.js",
         "lint": "eslint src/",
         "lint:fix": "eslint src/ --fix",
+        "test:load": "node scripts/load-test.js",
         "db:optimize": "node scripts/optimizeDb.js",
         "db:seed": "node scripts/seedAdmin.js",
         "sms-simulator": "node scripts/sms-simulator.js",
