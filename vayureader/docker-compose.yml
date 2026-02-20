@@ -90,6 +90,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/certs:/etc/nginx/certs:ro
+      - ./uploads:/usr/src/app/uploads:ro
     depends_on:
       app:
         condition: service_healthy

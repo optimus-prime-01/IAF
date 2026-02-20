@@ -431,79 +431,54 @@ const serveFile = async (req, res, next) => {
     try {
         // Reconstruct the URL path from params
         const requestedPath = `/uploads/${req.params.folder}/${req.params.filename}`;
+        const cacheKey = `file_auth:${requestedPath}`;
 
-        // Validate that this file belongs to a real PDF document
-        const pdf = await PdfDocument.findOne({
-            $or: [
-                { pdfUrl: requestedPath },
-                { thumbnail: requestedPath }
-            ]
-        }).lean();
+        let meta;
+        const cachedData = await redisClient.get(cacheKey);
 
-        if (!pdf) {
-            return response.notFound(res, 'File not found');
-        }
+        if (cachedData) {
+            meta = JSON.parse(cachedData);
+        } else {
+            // Validate that this file belongs to a real PDF document
+            const pdf = await PdfDocument.findOne({
+                $or: [
+                    { pdfUrl: requestedPath },
+                    { thumbnail: requestedPath }
+                ]
+            }).lean();
 
-        // Resolve the absolute path and prevent directory traversal
-        const absolutePath = path.resolve(UPLOAD_DIR, req.params.folder, req.params.filename);
-        if (!absolutePath.startsWith(path.resolve(UPLOAD_DIR))) {
-            return response.forbidden(res, 'Access denied');
-        }
-
-        // Check file exists on disk
-        if (!fsSync.existsSync(absolutePath)) {
-            return response.notFound(res, 'File not found on disk');
-        }
-
-        // Determine content type
-        const ext = path.extname(req.params.filename).toLowerCase();
-        const mimeTypes = {
-            '.pdf': 'application/pdf',
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.webp': 'image/webp',
-            '.gif': 'image/gif'
-        };
-        const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-        // Get file stats for Content-Length and range support
-        const stat = fsSync.statSync(absolutePath);
-
-        // Support byte-range requests (important for PDF viewers)
-        const range = req.headers.range;
-        if (range) {
-            const parts = range.replace(/bytes=/, '').split('-');
-            const start = parseInt(parts[0], 10);
-            const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
-
-            // Validate range bounds
-            if (isNaN(start) || isNaN(end) || start < 0 || end >= stat.size || start > end) {
-                res.writeHead(416, { 'Content-Range': `bytes */${stat.size}` });
-                return res.end();
+            if (!pdf) {
+                return response.notFound(res, 'File not found');
             }
 
-            const chunkSize = end - start + 1;
+            // Determine content type
+            const ext = path.extname(req.params.filename).toLowerCase();
+            const mimeTypes = {
+                '.pdf': 'application/pdf',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.webp': 'image/webp',
+                '.gif': 'image/gif'
+            };
+            const contentType = mimeTypes[ext] || 'application/octet-stream';
 
-            res.writeHead(206, {
-                'Content-Range': `bytes ${start}-${end}/${stat.size}`,
-                'Accept-Ranges': 'bytes',
-                'Content-Length': chunkSize,
-                'Content-Type': contentType,
-                'Cache-Control': 'private, max-age=3600'
-            });
+            meta = {
+                valid: true,
+                contentType: contentType
+            };
 
-            createReadStream(absolutePath, { start, end }).pipe(res);
-        } else {
-            res.writeHead(200, {
-                'Content-Length': stat.size,
-                'Content-Type': contentType,
-                'Accept-Ranges': 'bytes',
-                'Cache-Control': 'private, max-age=3600'
-            });
-
-            createReadStream(absolutePath).pipe(res);
+            // Cache for short TTL (1 hour)
+            await redisClient.set(cacheKey, JSON.stringify(meta), { EX: 3600 });
         }
+
+        const internalPath = `/internal-uploads/${req.params.folder}/${req.params.filename}`;
+
+        // Offload file transfer to Nginx internal location via X-Accel-Redirect
+        // Nginx will handle range requests, caching headers, and synchronous fs reads natively
+        res.setHeader('Content-Type', meta.contentType);
+        res.setHeader('X-Accel-Redirect', internalPath);
+        res.end();
     } catch (error) {
         next(error);
     }

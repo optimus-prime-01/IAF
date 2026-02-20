@@ -75,6 +75,9 @@ const pdfDocumentSchema = new mongoose.Schema(
 pdfDocumentSchema.index({ title: 'text', content: 'text' });
 // category index is handled in schema definition (index: true)
 pdfDocumentSchema.index({ createdAt: -1 });
+// Indexes for fast file lookups during authenticated delivery
+pdfDocumentSchema.index({ pdfUrl: 1 });
+pdfDocumentSchema.index({ thumbnail: 1 });
 
 // =============================================================================
 // INSTANCE METHODS

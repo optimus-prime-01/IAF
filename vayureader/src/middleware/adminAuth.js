@@ -9,6 +9,7 @@
 const { verifyToken } = require('../services/jwt.service');
 const response = require('../utils/response');
 const User = require('../models/User');
+const { redisClient } = require('../config/redis');
 
 /**
  * Authenticates an admin via JWT token.
@@ -167,8 +168,20 @@ const unifiedAuth = async (req, res, next) => {
         const decoded = verifyToken(token);
 
         if (decoded.type === 'admin') {
-            // Fix Zombie Admin: Validate admin exists in DB even for unifiedAuth
-            const admin = await Admin.findById(decoded.adminId);
+            const cacheKey = `auth_admin:${decoded.adminId}`;
+            let admin;
+            const cachedAdmin = await redisClient.get(cacheKey);
+
+            if (cachedAdmin) {
+                admin = JSON.parse(cachedAdmin);
+            } else {
+                // Fix Zombie Admin: Validate admin exists in DB even for unifiedAuth
+                admin = await Admin.findById(decoded.adminId).lean();
+                if (admin) {
+                    await redisClient.set(cacheKey, JSON.stringify(admin), { EX: 60 }); // Cache for 60s
+                }
+            }
+
             if (!admin) {
                 return response.unauthorized(res, 'Admin account no longer exists');
             }
@@ -191,8 +204,20 @@ const unifiedAuth = async (req, res, next) => {
                 return response.forbidden(res, 'Users can only perform read operations');
             }
 
-            // Validate user still exists and is not blocked
-            const user = await User.findById(decoded.userId).select('isBlocked');
+            const cacheKey = `auth_user:${decoded.userId}`;
+            let user;
+            const cachedUser = await redisClient.get(cacheKey);
+
+            if (cachedUser) {
+                user = JSON.parse(cachedUser);
+            } else {
+                // Validate user still exists and is not blocked
+                user = await User.findById(decoded.userId).select('isBlocked').lean();
+                if (user) {
+                    await redisClient.set(cacheKey, JSON.stringify(user), { EX: 60 }); // Cache for 60s
+                }
+            }
+
             if (!user) {
                 return response.unauthorized(res, 'User no longer exists');
             }

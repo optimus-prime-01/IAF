@@ -19,7 +19,7 @@ const { connectDB } = require('./config/database');
 const { corsOptions } = require('./config/cors');
 
 // Middleware
-const { apiLimiter } = require('./middleware/rateLimiter');
+const { apiLimiter, fileReadLimiter } = require('./middleware/rateLimiter');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const { trimFields } = require('./middleware/validate');
 const { requestTimeout } = require('./middleware/timeout');
@@ -131,7 +131,7 @@ app.use('/api', (req, res, next) => {
 // Files go through unifiedAuth middleware to prevent unauthenticated access.
 const { unifiedAuth } = require('./middleware/adminAuth');
 const { serveFile } = require('./controllers/pdf.controller');
-app.get('/uploads/:folder/:filename', apiLimiter, unifiedAuth, serveFile);
+app.get('/uploads/:folder/:filename', fileReadLimiter, unifiedAuth, serveFile);
 
 // =============================================================================
 // ROUTES

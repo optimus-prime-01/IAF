@@ -776,7 +776,7 @@ export default function PdfManager(props) {
           <button
             className="btn-upload"
             onClick={handleUpload}
-            disabled={!file || !title || !category}
+            disabled={!file || !title || (showNewCategoryInput ? !newCategory.trim() : !category)}
           >
             <UploadCloud size={18} />
             Upload PDF

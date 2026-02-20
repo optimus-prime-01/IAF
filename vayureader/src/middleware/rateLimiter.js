@@ -86,9 +86,21 @@ const loginLimiter = createLimiter({
     ...apiLimitConfig.auth.login
 });
 
+/**
+ * File read request rate limiter.
+ * Higher threshold for PDF streaming/chunk requests.
+ */
+const fileReadLimiter = createLimiter({
+    prefix: 'file-read',
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5000,
+    message: 'Too many file read requests'
+});
+
 module.exports = {
     createLimiter,
     apiLimiter,
     otpLimiter,
-    loginLimiter
+    loginLimiter,
+    fileReadLimiter
 };
