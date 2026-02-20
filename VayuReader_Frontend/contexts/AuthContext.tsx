@@ -1,5 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import axios from 'axios';
 
+import { AUTH_BASE_URL } from '@/constants/config';
 import { AuthUser, clearToken as clearStoredToken, getToken, getUser, setExpiry as storeExpiry, setToken as storeToken, setUser as storeUser } from '@/lib/authStorage';
 import { setUnauthorizedHandler } from '@/lib/apiClient';
 
@@ -109,10 +111,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [scheduleExpiry]);
 
   const signOut = useCallback(async () => {
+    const activeToken = token || (await getToken());
+
+    if (activeToken) {
+      try {
+        await axios.post(
+          `${AUTH_BASE_URL}/api/auth/logout`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${activeToken}`,
+            },
+            timeout: 8000,
+          }
+        );
+      } catch (error) {
+        console.warn('Logout API call failed, continuing local signout:', error);
+      }
+    }
+
+    if (expiryTimeout.current) {
+      clearTimeout(expiryTimeout.current);
+      expiryTimeout.current = null;
+    }
+
     await clearStoredToken();
     setTokenState(null);
     setUserState(null);
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     setUnauthorizedHandler(signOut);

@@ -15,6 +15,7 @@ const { logAction, RESOURCE_TYPES, ACTION_TYPES } = require('../services/audit.s
 const response = require('../utils/response');
 const { sanitizePhone, sanitizeName, escapeRegex } = require('../utils/sanitize');
 const { server } = require('../config/environment');
+const { redisClient } = require('../config/redis');
 
 // =============================================================================
 // AUTHENTICATION (Password + OTP 2FA with Login Token)
@@ -415,18 +416,45 @@ const getCurrentAdmin = async (req, res, next) => {
 };
 
 /**
- * Logout admin by clearing the JWT cookie.
+ * Logout admin by invalidating current token session and clearing cookie.
  */
-const logout = (req, res) => {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const isTesting = server.isTesting;
-    res.clearCookie('admin_token', {
-        httpOnly: true,
-        secure: isProduction || isTesting,
-        sameSite: isTesting ? 'none' : 'lax',
-        path: '/'
-    });
-    response.success(res, null, 'Logged out successfully');
+const logout = async (req, res, next) => {
+    try {
+        const adminId = req.admin?.adminId;
+
+        if (!adminId) {
+            return response.unauthorized(res, 'No token provided');
+        }
+
+        const admin = await Admin.findByIdAndUpdate(
+            adminId,
+            { $inc: { tokenVersion: 1 } }
+        );
+
+        if (!admin) {
+            return response.unauthorized(res, 'Admin account no longer exists');
+        }
+
+        // Clear short-lived auth cache used by unifiedAuth.
+        const cacheKey = `auth_admin:${adminId}`;
+        try {
+            await redisClient.del(cacheKey);
+        } catch (cacheError) {
+            console.warn('Failed to clear admin auth cache on logout:', cacheError.message);
+        }
+
+        const isProduction = process.env.NODE_ENV === 'production';
+        const isTesting = server.isTesting;
+        res.clearCookie('admin_token', {
+            httpOnly: true,
+            secure: isProduction || isTesting,
+            sameSite: isTesting ? 'none' : 'lax',
+            path: '/'
+        });
+        response.success(res, null, 'Logged out successfully');
+    } catch (error) {
+        next(error);
+    }
 };
 
 module.exports = {
@@ -442,4 +470,3 @@ module.exports = {
     createUser,
     getAllUsers
 };
-

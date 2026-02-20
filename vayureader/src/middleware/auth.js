@@ -43,12 +43,18 @@ const authenticateUser = async (req, res, next) => {
         }
 
         // Check if user is blocked or deleted
-        const user = await User.findById(decoded.userId).select('isBlocked');
+        const user = await User.findById(decoded.userId).select('isBlocked tokenVersion');
         if (!user) {
             return response.unauthorized(res, 'User no longer exists');
         }
         if (user.isBlocked) {
             return response.unauthorized(res, 'User is blocked');
+        }
+
+        const decodedTokenVersion = Number.isInteger(decoded.tokenVersion) ? decoded.tokenVersion : 0;
+        const currentTokenVersion = user.tokenVersion || 0;
+        if (decodedTokenVersion !== currentTokenVersion) {
+            return response.unauthorized(res, 'Session expired. Please login again.');
         }
 
         // Attach user info to request (includes userId, phone_number, deviceId, name)
@@ -98,8 +104,14 @@ const optionalAuth = async (req, res, next) => {
 
         if (decoded.type === 'user') {
             // Validate user still exists and is not blocked
-            const user = await User.findById(decoded.userId).select('isBlocked');
+            const user = await User.findById(decoded.userId).select('isBlocked tokenVersion');
             if (user && !user.isBlocked) {
+                const decodedTokenVersion = Number.isInteger(decoded.tokenVersion) ? decoded.tokenVersion : 0;
+                const currentTokenVersion = user.tokenVersion || 0;
+                if (decodedTokenVersion !== currentTokenVersion) {
+                    return next();
+                }
+
                 req.user = {
                     userId: decoded.userId,
                     phone_number: decoded.phone_number,

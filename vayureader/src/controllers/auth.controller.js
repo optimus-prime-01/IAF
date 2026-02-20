@@ -14,6 +14,7 @@ const { logLogin, logDeviceChange, logNameChange } = require('../services/userAu
 const response = require('../utils/response');
 const { sanitizePhone, sanitizeName } = require('../utils/sanitize');
 const { server } = require('../config/environment');
+const { redisClient } = require('../config/redis');
 
 /**
  * Request OTP for user login.
@@ -174,7 +175,8 @@ const verifyLoginOtp = async (req, res, next) => {
         const token = generateLifetimeUserToken(user._id, {
             deviceId: sanitizedDeviceId,
             phone_number: user.phone_number,
-            name: user.name
+            name: user.name,
+            tokenVersion: user.tokenVersion || 0
         });
 
         // Set HTTP-only cookie with long expiration
@@ -206,12 +208,34 @@ const verifyLoginOtp = async (req, res, next) => {
  */
 const logout = async (req, res, next) => {
     try {
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            return response.unauthorized(res, 'No token provided');
+        }
+
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { $inc: { tokenVersion: 1 } }
+        );
+
+        if (!user) {
+            return response.unauthorized(res, 'User no longer exists');
+        }
+
+        // Clear short-lived auth cache used by unifiedAuth.
+        const cacheKey = `auth_user:${userId}`;
+        try {
+            await redisClient.del(cacheKey);
+        } catch (cacheError) {
+            console.warn('Failed to clear auth cache on logout:', cacheError.message);
+        }
+
         const isTesting = server.isTesting;
-        res.cookie('auth_token', '', {
+        res.clearCookie('auth_token', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production' || isTesting,
             sameSite: isTesting ? 'none' : 'lax',
-            maxAge: 0,
             path: '/'
         });
 

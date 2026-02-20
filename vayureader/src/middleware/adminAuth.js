@@ -59,10 +59,17 @@ const authenticateAdmin = async (req, res, next) => {
             return response.unauthorized(res, 'Admin access required');
         }
 
-        // Database Verification: Check if admin still exists and is active
-        const admin = await Admin.findById(decoded.adminId);
+        // Database verification: ensure admin exists and token session is still valid.
+        const admin = await Admin.findById(decoded.adminId)
+            .select('name contact isSuperAdmin permissions tokenVersion');
         if (!admin) {
             return response.unauthorized(res, 'Admin account no longer exists');
+        }
+
+        const decodedTokenVersion = Number.isInteger(decoded.tokenVersion) ? decoded.tokenVersion : 0;
+        const currentTokenVersion = admin.tokenVersion || 0;
+        if (decodedTokenVersion !== currentTokenVersion) {
+            return response.unauthorized(res, 'Session expired. Please login again.');
         }
 
         // Optional: Check if admin is disabled/suspended (if such a field exists)
@@ -176,7 +183,9 @@ const unifiedAuth = async (req, res, next) => {
                 admin = JSON.parse(cachedAdmin);
             } else {
                 // Fix Zombie Admin: Validate admin exists in DB even for unifiedAuth
-                admin = await Admin.findById(decoded.adminId).lean();
+                admin = await Admin.findById(decoded.adminId)
+                    .select('name contact isSuperAdmin permissions tokenVersion')
+                    .lean();
                 if (admin) {
                     await redisClient.set(cacheKey, JSON.stringify(admin), { EX: 60 }); // Cache for 60s
                 }
@@ -184,6 +193,12 @@ const unifiedAuth = async (req, res, next) => {
 
             if (!admin) {
                 return response.unauthorized(res, 'Admin account no longer exists');
+            }
+
+            const decodedTokenVersion = Number.isInteger(decoded.tokenVersion) ? decoded.tokenVersion : 0;
+            const currentTokenVersion = admin.tokenVersion || 0;
+            if (decodedTokenVersion !== currentTokenVersion) {
+                return response.unauthorized(res, 'Session expired. Please login again.');
             }
 
             req.admin = {
@@ -212,7 +227,7 @@ const unifiedAuth = async (req, res, next) => {
                 user = JSON.parse(cachedUser);
             } else {
                 // Validate user still exists and is not blocked
-                user = await User.findById(decoded.userId).select('isBlocked').lean();
+                user = await User.findById(decoded.userId).select('isBlocked tokenVersion').lean();
                 if (user) {
                     await redisClient.set(cacheKey, JSON.stringify(user), { EX: 60 }); // Cache for 60s
                 }
@@ -223,6 +238,12 @@ const unifiedAuth = async (req, res, next) => {
             }
             if (user.isBlocked) {
                 return response.unauthorized(res, 'User is blocked');
+            }
+
+            const decodedTokenVersion = Number.isInteger(decoded.tokenVersion) ? decoded.tokenVersion : 0;
+            const currentTokenVersion = user.tokenVersion || 0;
+            if (decodedTokenVersion !== currentTokenVersion) {
+                return response.unauthorized(res, 'Session expired. Please login again.');
             }
 
             req.user = { userId: decoded.userId };

@@ -54,9 +54,9 @@ router.get('/me', authenticateAdmin, adminController.getCurrentAdmin);
 
 /**
  * POST /api/admin/logout
- * Logout and clear cookie.
+ * Logout, revoke active admin session token, and clear cookie.
  */
-router.post('/logout', adminController.logout);
+router.post('/logout', authenticateAdmin, adminController.logout);
 
 // =============================================================================
 // SUB-ADMIN MANAGEMENT ROUTES

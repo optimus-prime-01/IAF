@@ -57,12 +57,15 @@ const generateLifetimeUserToken = (userId, additionalPayload = {}) => {
  * @returns {string} JWT token
  */
 const generateAdminToken = (admin) => {
+    const tokenVersion = Number.isInteger(admin?.tokenVersion) ? admin.tokenVersion : 0;
+
     const payload = {
         adminId: admin._id,
         name: admin.name,
         contact: admin.contact,
         isSuperAdmin: admin.isSuperAdmin || false,
         permissions: admin.permissions || [],
+        tokenVersion,
         type: 'admin'
     };
 

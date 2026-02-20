@@ -91,6 +91,16 @@ const adminSchema = new mongoose.Schema(
         },
 
         /**
+         * Session version for JWT invalidation.
+         * Incremented on logout to revoke previously issued admin tokens.
+         */
+        tokenVersion: {
+            type: Number,
+            default: 0,
+            min: 0
+        },
+
+        /**
          * Security questions for password recovery.
          * Answers are hashed for security.
          */

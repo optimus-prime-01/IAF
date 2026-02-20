@@ -74,6 +74,16 @@ const userSchema = new mongoose.Schema(
         },
 
         /**
+         * Session version for JWT invalidation.
+         * Incremented on logout to revoke previously issued user tokens.
+         */
+        tokenVersion: {
+            type: Number,
+            default: 0,
+            min: 0
+        },
+
+        /**
          * Security questions for password recovery.
          * Array of question/answer pairs with bcrypt hashed answers.
          */

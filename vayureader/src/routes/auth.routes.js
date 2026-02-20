@@ -51,7 +51,7 @@ router.post(
  * POST /api/auth/logout
  * Logout user.
  */
-router.post('/logout', authController.logout);
+router.post('/logout', authenticateUser, authController.logout);
 
 /**
  * GET /api/auth/profile

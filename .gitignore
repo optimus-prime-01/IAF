@@ -79,3 +79,4 @@ logs/
 *.key
 .cache/
 
+tmp/
