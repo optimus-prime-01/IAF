@@ -1,0 +1,5 @@
+{
+    "title": "../../etc/passwd",
+    "content": "Path traversal in title field",
+    "category": "../../../root/.ssh/id_rsa"
+}

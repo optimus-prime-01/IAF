@@ -148,10 +148,7 @@ router.post(
     '/upload',
     authenticateAdmin,
     requirePermission('manage_pdfs'),
-    upload.fields([
-        { name: 'pdf', maxCount: 1 },
-        { name: 'thumbnail', maxCount: 1 }
-    ]),
+    upload.single('pdf'),
     trimFields,
     pdfController.uploadPdf
 );
@@ -165,10 +162,7 @@ router.put(
     authenticateAdmin,
     requirePermission('manage_pdfs'),
     validateObjectId(),
-    upload.fields([
-        { name: 'pdf', maxCount: 1 },
-        { name: 'thumbnail', maxCount: 1 }
-    ]),
+    upload.single('pdf'),
     trimFields,
     pdfController.updatePdf
 );

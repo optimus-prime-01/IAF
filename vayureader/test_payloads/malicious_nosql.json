@@ -1,0 +1,6 @@
+{
+    "abbreviation": {
+        "$ne": null
+    },
+    "fullForm": "NoSQL Condition Injection - tries to bypass string matching"
+}

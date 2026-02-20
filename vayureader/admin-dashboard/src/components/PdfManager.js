@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../utils/api';
-import * as pdfjsLib from 'pdfjs-dist/webpack';
 import { usePdfEvents } from '../hooks/usePdfEvents';
 import { useNotifications, NotificationToast } from '../hooks/useNotifications';
 import Pagination from './Pagination';
@@ -189,9 +188,51 @@ export default function PdfManager(props) {
     setEditFile(null);
   };
 
+  // Validate PDF magic bytes from ArrayBuffer
+  const validatePdfMagicBytes = (arrayBuffer) => {
+    const bytes = new Uint8Array(arrayBuffer.slice(0, 5));
+    // PDF magic bytes: %PDF- (0x25 0x50 0x44 0x46 0x2D)
+    return bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2D;
+  };
+
+  // Validate image magic bytes from ArrayBuffer
+  const validateImageMagicBytes = (arrayBuffer) => {
+    const bytes = new Uint8Array(arrayBuffer.slice(0, 8));
+    // JPEG: FF D8 FF
+    if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return true;
+    // PNG: 89 50 4E 47
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) return true;
+    // GIF: 47 49 46
+    if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return true;
+    // WebP: 52 49 46 46 ... 57 45 42 50
+    if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return true;
+    return false;
+  };
+
+  // Validate file extension matches expected type
+  const validateFileExtension = (file, expectedTypes) => {
+    const ext = file.name.split('.').pop().toLowerCase();
+    return expectedTypes.includes(ext);
+  };
+
   const handleUpload = async () => {
     const usedCategory = showNewCategoryInput && newCategory.trim() ? newCategory.trim() : category.trim();
     if (!file || !title.trim() || !usedCategory) return addNotification('Please fill in all required fields (File, Title, Category).', 'error');
+
+    // Frontend Security: Validate file extension
+    if (!validateFileExtension(file, ['pdf'])) {
+      return addNotification('Security Warning: Only .pdf files are allowed. File extension mismatch detected.', 'error');
+    }
+
+    // Frontend Security: Validate PDF magic bytes before upload
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      if (!validatePdfMagicBytes(arrayBuffer)) {
+        return addNotification('Security Warning: File content does not match a valid PDF. Possible file spoofing detected (e.g., renamed .exe/.html).', 'error');
+      }
+    } catch (e) {
+      return addNotification('Failed to read file for validation.', 'error');
+    }
 
     const formData = new FormData();
     formData.append('pdf', file);
@@ -199,48 +240,42 @@ export default function PdfManager(props) {
     formData.append('content', content);
     formData.append('category', usedCategory);
 
-    const reader = new FileReader();
-    reader.onload = async function () {
-      try {
-        const typedarray = new Uint8Array(this.result);
-        const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 1.5 });
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: context, viewport }).promise;
-
-        canvas.toBlob(async (blob) => {
-          if (blob) formData.append('thumbnail', blob, 'thumbnail.jpg');
-          try {
-            await api.post('/api/pdfs/upload', formData, {
-              headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            addNotification('PDF uploaded successfully!', 'success');
-            setFile(null);
-            setTitle('');
-            setContent('');
-            setCategory('');
-            setShowNewCategoryInput(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-            fetchPdfs();
-            fetchCategories();
-          } catch (e) {
-            addNotification(e.response?.data?.message || 'Upload failed.', 'error');
-          }
-        }, 'image/jpeg');
-      } catch (e) {
-        console.error(e);
-        addNotification('Invalid PDF file.', 'error');
-      }
-    };
-    reader.readAsArrayBuffer(file);
+    try {
+      setLoading(true);
+      await api.post('/api/pdfs/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      addNotification('PDF uploaded successfully! Thumbnail will be generated automatically.', 'success');
+      setFile(null);
+      setTitle('');
+      setContent('');
+      setCategory('');
+      setShowNewCategoryInput(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      fetchPdfs();
+      fetchCategories();
+    } catch (e) {
+      addNotification(e.response?.data?.message || 'Upload failed.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleUpdatePdf = async (id) => {
     if (!editTitle.trim() || !editCategory.trim()) return addNotification('Title and Category are required.', 'error');
+
+    // Frontend Security: Validate edit file if provided
+    if (editFile) {
+      if (!validateFileExtension(editFile, ['pdf'])) {
+        return addNotification('Security Warning: Only .pdf files are allowed. File extension mismatch detected.', 'error');
+      }
+
+      // Read and validate magic bytes
+      const buffer = await editFile.arrayBuffer();
+      if (!validatePdfMagicBytes(buffer)) {
+        return addNotification('Security Warning: File content does not match a valid PDF. Possible file spoofing detected.', 'error');
+      }
+    }
 
     const formData = new FormData();
     formData.append('title', editTitle);
@@ -274,11 +309,31 @@ export default function PdfManager(props) {
     e.preventDefault();
     setIsDragOver(false);
     const droppedFiles = e.dataTransfer.files;
-    if (droppedFiles && droppedFiles.length > 0 && droppedFiles[0].type === 'application/pdf') {
-      setFile(droppedFiles[0]);
+    if (droppedFiles && droppedFiles.length > 0) {
+      const droppedFile = droppedFiles[0];
+      const ext = droppedFile.name.split('.').pop().toLowerCase();
+      if (ext !== 'pdf') {
+        addNotification(`Security Warning: File "${droppedFile.name}" does not have a .pdf extension. Rejected.`, 'error');
+      } else if (droppedFile.type && droppedFile.type !== 'application/pdf') {
+        addNotification(`Security Warning: File "${droppedFile.name}" has MIME type "${droppedFile.type}" instead of "application/pdf". Possible spoofing.`, 'error');
+      } else {
+        setFile(droppedFile);
+      }
     } else {
       addNotification('Please drop a valid PDF file.', 'error');
     }
+  };
+
+  const handleFileSelect = (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+    const ext = selectedFile.name.split('.').pop().toLowerCase();
+    if (ext !== 'pdf') {
+      addNotification(`Security Warning: File "${selectedFile.name}" does not have a .pdf extension. Rejected.`, 'error');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    setFile(selectedFile);
   };
 
   return (
@@ -685,7 +740,7 @@ export default function PdfManager(props) {
             <input
               type="file"
               accept="application/pdf"
-              onChange={(e) => setFile(e.target.files[0])}
+              onChange={handleFileSelect}
               style={{ display: 'none' }}
               ref={fileInputRef}
             />

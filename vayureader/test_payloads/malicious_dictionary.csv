@@ -1,0 +1,8 @@
+word,partOfSpeech,definition,synonyms,antonyms
+SAFE,noun,A completely safe and normal word,secure;protected,unsafe
+XSS_TEST,noun,<script>alert("Hacked!")</script>,,
+IFRAME_TEST,noun,<iframe src="javascript:alert(1)"></iframe>,,
+EVENT_HANDLER,noun,<div onclick="alert(1)">click me</div>,,
+HYPERLINK_IN_DEF,noun,=HYPERLINK("http://evil.com"),,
+-able,suffix,Valid dictionary suffix that starts with a dash,,
+=cmd|' /C calc'!A0,noun,DDE Macro in word column,,

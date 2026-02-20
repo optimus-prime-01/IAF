@@ -16,7 +16,7 @@ const DANGEROUS_PATTERNS = [
     /<object/gi,
     /<embed/gi,
 ];
-const DANGEROUS_CSV_PREFIX = /^[=+\-@]/;
+const DANGEROUS_CSV_PREFIX = /^(=|[-+@].*[|(!])/;
 
 /**
  * Sanitize a string by removing dangerous content
@@ -75,6 +75,20 @@ export function validateFile(file, allowedTypes) {
         errors.push(`Invalid file type. Allowed: ${allowedTypes.join(', ')}`);
     }
 
+    // MIME type spoofing detection
+    const expectedMimes = {
+        csv: ['text/csv', 'application/vnd.ms-excel', 'text/plain', ''],
+        json: ['application/json', 'text/plain', ''],
+        pdf: ['application/pdf', '']
+    };
+
+    if (file.type) {
+        const allowedMimes = allowedTypes.reduce((acc, t) => acc.concat(expectedMimes[t] || []), []);
+        if (allowedMimes.length > 0 && !allowedMimes.includes(file.type)) {
+            errors.push(`Security Warning: File MIME type "${file.type}" does not match expected type for .${extension}. Possible file spoofing.`);
+        }
+    }
+
     return { valid: errors.length === 0, errors };
 }
 
@@ -99,6 +113,24 @@ export function validateAbbreviationData(data) {
             errors.push(`Entry ${idx + 1}: Missing abbreviation or fullForm`);
             return null;
         }
+
+        // Specifically block formula/macro injections
+        if (DANGEROUS_CSV_PREFIX.test(item.abbreviation.trim()) || DANGEROUS_CSV_PREFIX.test(item.fullForm.trim())) {
+            errors.push(`Entry ${idx + 1}: CSV/Formula Injection detected in "${item.abbreviation}"`);
+            return null;
+        }
+
+        // Block XSS attempts directly
+        let hasXSS = false;
+        DANGEROUS_PATTERNS.forEach(pattern => {
+            if (pattern.test(item.abbreviation) || pattern.test(item.fullForm)) hasXSS = true;
+        });
+
+        if (hasXSS) {
+            errors.push(`Entry ${idx + 1}: XSS/Script Injection detected in "${item.abbreviation}"`);
+            return null;
+        }
+
         return {
             abbreviation: sanitizeString(String(item.abbreviation)),
             fullForm: sanitizeString(String(item.fullForm))
@@ -108,7 +140,7 @@ export function validateAbbreviationData(data) {
     return {
         valid: errors.length === 0,
         errors,
-        data: sanitizedData
+        data: errors.length === 0 ? sanitizedData : null
     };
 }
 
@@ -139,6 +171,37 @@ export function validateDictionaryData(data) {
             return;
         }
 
+        // Specifically block formula/macro injections in dictionary keys and definitions
+        if (DANGEROUS_CSV_PREFIX.test(word.trim())) {
+            errors.push(`Entry "${word}": CSV/Formula Injection detected in word key`);
+            return;
+        }
+
+        let hasXSS = false;
+        let hasFormula = false;
+
+        wordData.MEANINGS.forEach(m => {
+            const def = String(m[1] || '').trim();
+            if (DANGEROUS_CSV_PREFIX.test(def)) hasFormula = true;
+
+            DANGEROUS_PATTERNS.forEach(pattern => {
+                if (pattern.test(word) || pattern.test(String(m[0])) || pattern.test(def)) hasXSS = true;
+                // Also check synonyms/antonyms
+                if (Array.isArray(m[2])) m[2].forEach(s => { if (pattern.test(String(s))) hasXSS = true; });
+                if (Array.isArray(m[3])) m[3].forEach(s => { if (pattern.test(String(s))) hasXSS = true; });
+            });
+        });
+
+        if (hasFormula) {
+            errors.push(`Entry "${word}": CSV/Formula Injection detected in definition`);
+            return;
+        }
+
+        if (hasXSS) {
+            errors.push(`Entry "${word}": XSS/Script Injection detected`);
+            return;
+        }
+
         sanitizedData[sanitizedWord] = {
             MEANINGS: wordData.MEANINGS.map(m => [
                 sanitizeString(String(m[0] || 'noun')),
@@ -158,7 +221,7 @@ export function validateDictionaryData(data) {
     return {
         valid: errors.length === 0,
         errors,
-        data: sanitizedData
+        data: errors.length === 0 ? sanitizedData : null
     };
 }
 

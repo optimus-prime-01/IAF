@@ -103,10 +103,83 @@ const isImage = async (buffer) => {
     return result.valid;
 };
 
+/**
+ * Cross-validates file extension against detected magic bytes.
+ * Catches spoofed files (e.g., .exe renamed to .pdf).
+ * 
+ * @param {string} originalName - Original filename
+ * @param {Buffer} buffer - File buffer
+ * @returns {Promise<{valid: boolean, error: string|null, detectedType: Object|null}>}
+ */
+const validateExtensionMatchesContent = async (originalName, buffer) => {
+    const ext = path.extname(originalName).toLowerCase().replace('.', '');
+    const type = await FileType.fromBuffer(buffer);
+
+    if (!type) {
+        return { valid: false, error: 'Unable to determine actual file type from content', detectedType: null };
+    }
+
+    // Map of expected extensions to allowed detected extensions
+    const extensionMap = {
+        pdf: ['pdf'],
+        jpg: ['jpg', 'jpeg'],
+        jpeg: ['jpg', 'jpeg'],
+        png: ['png'],
+        gif: ['gif'],
+        webp: ['webp']
+    };
+
+    const allowedExts = extensionMap[ext];
+    if (!allowedExts) {
+        return { valid: false, error: `Unsupported file extension: .${ext}`, detectedType: type };
+    }
+
+    if (!allowedExts.includes(type.ext)) {
+        return {
+            valid: false,
+            error: `File spoofing detected: Extension is .${ext} but actual content is ${type.mime} (.${type.ext})`,
+            detectedType: type
+        };
+    }
+
+    return { valid: true, error: null, detectedType: type };
+};
+
+/**
+ * Validates that a filename is safe (no path traversal, no null bytes).
+ * 
+ * @param {string} filename - Filename to validate
+ * @returns {{valid: boolean, error: string|null}}
+ */
+const validateSafeFilename = (filename) => {
+    if (!filename || typeof filename !== 'string') {
+        return { valid: false, error: 'Filename is required' };
+    }
+
+    // Check for null bytes
+    if (filename.includes('\0')) {
+        return { valid: false, error: 'Filename contains null bytes' };
+    }
+
+    // Check for path traversal
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+        return { valid: false, error: 'Path traversal detected in filename' };
+    }
+
+    // Check for hidden files
+    if (filename.startsWith('.')) {
+        return { valid: false, error: 'Hidden files are not allowed' };
+    }
+
+    return { valid: true, error: null };
+};
+
 module.exports = {
     ALLOWED_TYPES,
     validateFileType,
     generateSafeFilename,
     isPdf,
-    isImage
+    isImage,
+    validateExtensionMatchesContent,
+    validateSafeFilename
 };

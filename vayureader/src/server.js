@@ -23,6 +23,7 @@ const { apiLimiter, fileReadLimiter } = require('./middleware/rateLimiter');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const { trimFields } = require('./middleware/validate');
 const { requestTimeout } = require('./middleware/timeout');
+const apiInjectionGuard = require('./middleware/apiInjectionGuard');
 
 // Routes
 const authRoutes = require('./routes/auth.routes');
@@ -109,6 +110,9 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Trim whitespace from string fields
 app.use(trimFields);
+
+// API Payload Guards
+app.use('/api', apiInjectionGuard);
 
 // Rate limiting on all API routes (except SSE - it's a single long-lived connection)
 app.use('/api', (req, res, next) => {

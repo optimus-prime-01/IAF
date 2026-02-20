@@ -16,7 +16,8 @@ const { publishPdfEvent, PDF_EVENTS } = require('../services/pubsub.service');
 const { logPdfRead } = require('../services/userAudit.service');
 const response = require('../utils/response');
 const { escapeRegex } = require('../utils/sanitize');
-const { validateFileType, ALLOWED_TYPES } = require('../utils/fileValidator');
+const { validateFileType, ALLOWED_TYPES, validateExtensionMatchesContent, validateSafeFilename } = require('../utils/fileValidator');
+const { generateThumbnail } = require('../services/thumbnail.service');
 
 const { redisClient } = require('../config/redis');
 
@@ -198,8 +199,7 @@ const getAdminPdfById = async (req, res, next) => {
 const uploadPdf = async (req, res, next) => {
     try {
         const { title, content, category } = req.body;
-        const pdfFile = req.files?.pdf?.[0];
-        const thumbnailFile = req.files?.thumbnail?.[0];
+        const pdfFile = req.file;
 
         if (!pdfFile) {
             return response.badRequest(res, 'PDF file is required');
@@ -209,35 +209,39 @@ const uploadPdf = async (req, res, next) => {
             return response.badRequest(res, 'Title is required');
         }
 
-        const pdfUrl = `/uploads/${req.folderName}/${pdfFile.filename}`;
-        const thumbnail = thumbnailFile
-            ? `/uploads/${req.folderName}/${thumbnailFile.filename}`
-            : undefined;
-
-        // Security Check: Validate Magic Bytes (File Content)
-        // We must read the file from disk because multer has already saved it.
-        if (pdfFile) {
-            const buffer = await fs.readFile(pdfFile.path);
-            const validPdf = await validateFileType(buffer, ALLOWED_TYPES.pdf);
-            if (!validPdf.valid) {
-                // Unlink invalid files
-                await fs.unlink(pdfFile.path).catch(() => { });
-                if (thumbnailFile) await fs.unlink(thumbnailFile.path).catch(() => { });
-
-                return response.badRequest(res, `Invalid PDF file content. Detected: ${validPdf.type ? validPdf.type.mime : 'unknown'}`);
-            }
+        // Security: Validate original filename for path traversal
+        const pdfNameCheck = validateSafeFilename(pdfFile.originalname);
+        if (!pdfNameCheck.valid) {
+            await fs.unlink(pdfFile.path).catch(() => { });
+            return response.badRequest(res, `PDF file rejected: ${pdfNameCheck.error}`);
         }
 
-        if (thumbnailFile) {
-            const buffer = await fs.readFile(thumbnailFile.path);
-            const validImage = await validateFileType(buffer, ALLOWED_TYPES.image);
-            if (!validImage.valid) {
-                // Unlink invalid files
-                await fs.unlink(thumbnailFile.path).catch(() => { });
-                if (pdfFile) await fs.unlink(pdfFile.path).catch(() => { });
+        // Security Check: Validate Magic Bytes (File Content)
+        const buffer = await fs.readFile(pdfFile.path);
+        const validPdf = await validateFileType(buffer, ALLOWED_TYPES.pdf);
+        if (!validPdf.valid) {
+            await fs.unlink(pdfFile.path).catch(() => { });
+            return response.badRequest(res, `Invalid PDF file content. Detected: ${validPdf.type ? validPdf.type.mime : 'unknown'}`);
+        }
 
-                return response.badRequest(res, `Invalid thumbnail file content. Detected: ${validImage.type ? validImage.type.mime : 'unknown'}`);
-            }
+        // Security: Cross-check extension vs actual content (catches .exe renamed to .pdf)
+        const extCheck = await validateExtensionMatchesContent(pdfFile.originalname, buffer);
+        if (!extCheck.valid) {
+            await fs.unlink(pdfFile.path).catch(() => { });
+            return response.badRequest(res, `Security Warning: ${extCheck.error}`);
+        }
+
+        const pdfUrl = `/uploads/${req.folderName}/${pdfFile.filename}`;
+
+        // Auto-generate thumbnail from PDF page 1 (server-side)
+        let thumbnail;
+        try {
+            const uploadDir = path.join(__dirname, '..', '..', 'uploads', req.folderName);
+            const result = await generateThumbnail(pdfFile.path, uploadDir);
+            thumbnail = `/uploads/${req.folderName}/${result.thumbnailFilename}`;
+        } catch (thumbError) {
+            console.warn('[Thumbnail] Auto-generation failed, saving PDF without thumbnail:', thumbError.message);
+            // PDF upload still succeeds even if thumbnail generation fails
         }
 
         const newDoc = new PdfDocument({
@@ -276,8 +280,7 @@ const uploadPdf = async (req, res, next) => {
 const updatePdf = async (req, res, next) => {
     try {
         const { title, content, category } = req.body;
-        const pdfFile = req.files?.pdf?.[0];
-        const thumbnailFile = req.files?.thumbnail?.[0];
+        const pdfFile = req.file;
 
         const oldDoc = await PdfDocument.findById(req.params.id);
         if (!oldDoc) {
@@ -290,28 +293,37 @@ const updatePdf = async (req, res, next) => {
         if (category !== undefined) updateData.category = category;
 
         if (pdfFile) {
-            updateData.pdfUrl = `/uploads/${req.folderName}/${pdfFile.filename}`;
+            // Security: Validate filename for path traversal
+            const nameCheck = validateSafeFilename(pdfFile.originalname);
+            if (!nameCheck.valid) {
+                await fs.unlink(pdfFile.path).catch(() => { });
+                return response.badRequest(res, `PDF file rejected: ${nameCheck.error}`);
+            }
 
-            // Security Check: Validate PDF
+            // Security Check: Validate PDF magic bytes
             const buffer = await fs.readFile(pdfFile.path);
             const validPdf = await validateFileType(buffer, ALLOWED_TYPES.pdf);
             if (!validPdf.valid) {
                 await fs.unlink(pdfFile.path).catch(() => { });
-                if (thumbnailFile) await fs.unlink(thumbnailFile.path).catch(() => { }); // Cleanup both if one fails
                 return response.badRequest(res, `Invalid PDF file content. Detected: ${validPdf.type ? validPdf.type.mime : 'unknown'}`);
             }
-        }
 
-        if (thumbnailFile) {
-            updateData.thumbnail = `/uploads/${req.folderName}/${thumbnailFile.filename}`;
+            // Security: Cross-check extension vs actual content
+            const extCheck = await validateExtensionMatchesContent(pdfFile.originalname, buffer);
+            if (!extCheck.valid) {
+                await fs.unlink(pdfFile.path).catch(() => { });
+                return response.badRequest(res, `Security Warning: ${extCheck.error}`);
+            }
 
-            // Security Check: Validate Thumbnail
-            const buffer = await fs.readFile(thumbnailFile.path);
-            const validImage = await validateFileType(buffer, ALLOWED_TYPES.image);
-            if (!validImage.valid) {
-                await fs.unlink(thumbnailFile.path).catch(() => { });
-                if (pdfFile) await fs.unlink(pdfFile.path).catch(() => { }); // Cleanup both
-                return response.badRequest(res, `Invalid thumbnail file content. Detected: ${validImage.type ? validImage.type.mime : 'unknown'}`);
+            updateData.pdfUrl = `/uploads/${req.folderName}/${pdfFile.filename}`;
+
+            // Auto-generate new thumbnail from the new PDF
+            try {
+                const uploadDir = path.join(__dirname, '..', '..', 'uploads', req.folderName);
+                const result = await generateThumbnail(pdfFile.path, uploadDir);
+                updateData.thumbnail = `/uploads/${req.folderName}/${result.thumbnailFilename}`;
+            } catch (thumbError) {
+                console.warn('[Thumbnail] Auto-generation failed during update:', thumbError.message);
             }
         }
 
@@ -326,7 +338,8 @@ const updatePdf = async (req, res, next) => {
             const oldPdfPath = path.join(__dirname, '..', '..', oldDoc.pdfUrl);
             fs.unlink(oldPdfPath).catch(() => { });
         }
-        if (thumbnailFile && oldDoc.thumbnail) {
+        if (pdfFile && oldDoc.thumbnail) {
+            // If we uploaded a new PDF, the old thumbnail is stale
             const oldThumbPath = path.join(__dirname, '..', '..', oldDoc.thumbnail);
             fs.unlink(oldThumbPath).catch(() => { });
         }
@@ -429,8 +442,18 @@ const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
 
 const serveFile = async (req, res, next) => {
     try {
+        // Security: Block path traversal in URL params
+        const { folder, filename } = req.params;
+        if (folder.includes('..') || folder.includes('/') || folder.includes('\\') || folder.includes('\0')) {
+            return response.badRequest(res, 'Invalid folder path');
+        }
+        const filenameCheck = validateSafeFilename(filename);
+        if (!filenameCheck.valid) {
+            return response.badRequest(res, `Invalid filename: ${filenameCheck.error}`);
+        }
+
         // Reconstruct the URL path from params
-        const requestedPath = `/uploads/${req.params.folder}/${req.params.filename}`;
+        const requestedPath = `/uploads/${folder}/${filename}`;
         const cacheKey = `file_auth:${requestedPath}`;
 
         let meta;
