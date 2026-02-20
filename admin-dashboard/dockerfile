@@ -1,20 +1,29 @@
-# Use Node.js LTS version
-FROM node:20-alpine
+# ==========================================
+# Stage 1: Build the React Application
+# ==========================================
+FROM node:20-alpine AS build
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files first for better caching
+# Copy package files and install dependencies
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
 
-# Copy source code
+# Copy source code and build the application
 COPY . .
+RUN npm run build
 
-# Expose the development server port
-EXPOSE 3000
+# ==========================================
+# Stage 2: Serve the App using Nginx
+# ==========================================
+FROM nginx:alpine
 
-# Start the development server
-CMD ["npm", "start"]
+# Copy the built files from the previous stage to Nginx's html folder
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Expose port 80 (default HTTP port for Nginx)
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
