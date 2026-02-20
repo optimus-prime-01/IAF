@@ -145,7 +145,8 @@ const getAllSubAdmins = async (req, res, next) => {
     try {
         const admins = await Admin.find({ isSuperAdmin: false })
             .sort({ createdAt: -1 })
-            .select('-otpCode -otpExpiresAt');
+            .select('name contact isSuperAdmin permissions isVerified createdBy createdAt updatedAt')
+            .lean();
 
         response.success(res, admins);
     } catch (error) {

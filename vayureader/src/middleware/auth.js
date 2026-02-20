@@ -9,6 +9,7 @@
 const { verifyToken } = require('../services/jwt.service');
 const response = require('../utils/response');
 const User = require('../models/User');
+const Admin = require('../models/Admin');
 
 /**
  * Authenticates a user via JWT token.
@@ -120,7 +121,27 @@ const optionalAuth = async (req, res, next) => {
                 };
             }
         } else if (decoded.type === 'admin') {
-            req.admin = decoded;
+            // Mirror admin validation used by strict middleware:
+            // ensure admin exists and token session is still valid.
+            const admin = await Admin.findById(decoded.adminId)
+                .select('name contact isSuperAdmin permissions tokenVersion');
+            if (!admin) {
+                return next();
+            }
+
+            const decodedTokenVersion = Number.isInteger(decoded.tokenVersion) ? decoded.tokenVersion : 0;
+            const currentTokenVersion = admin.tokenVersion || 0;
+            if (decodedTokenVersion !== currentTokenVersion) {
+                return next();
+            }
+
+            req.admin = {
+                adminId: admin._id,
+                name: admin.name,
+                contact: admin.contact,
+                isSuperAdmin: admin.isSuperAdmin,
+                permissions: admin.permissions || []
+            };
         }
     } catch (error) {
         // Silently ignore invalid tokens for optional auth
