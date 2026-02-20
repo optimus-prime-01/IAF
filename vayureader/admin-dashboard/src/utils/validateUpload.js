@@ -114,6 +114,12 @@ export function validateAbbreviationData(data) {
             return null;
         }
 
+        // Block JSON/NoSQL injection: fields must be strings, not objects like {"$ne": null}
+        if (typeof item.abbreviation !== 'string' || typeof item.fullForm !== 'string') {
+            errors.push(`Entry ${idx + 1}: JSON/NoSQL Injection detected — abbreviation and fullForm must be plain strings, not objects`);
+            return null;
+        }
+
         // Specifically block formula/macro injections
         if (DANGEROUS_CSV_PREFIX.test(item.abbreviation.trim()) || DANGEROUS_CSV_PREFIX.test(item.fullForm.trim())) {
             errors.push(`Entry ${idx + 1}: CSV/Formula Injection detected in "${item.abbreviation}"`);

