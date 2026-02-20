@@ -437,16 +437,20 @@ export default function DictionaryUploader() {
           </div>
         ) : (
           <div style={styles.uploadGrid}>
-            <div style={styles.uploadBox}>
+            <label style={styles.uploadBox}>
+              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" style={{ marginBottom: 4 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
               <p style={styles.label}>CSV File</p>
-              <input type="file" accept=".csv" ref={csvInputRef} onChange={handleCSVSelect} disabled={loading} style={styles.fileInput} />
+              <input type="file" accept=".csv" ref={csvInputRef} onChange={handleCSVSelect} disabled={loading} style={{ display: 'none' }} />
+              <div style={styles.uploadBtn}>Choose CSV File</div>
               <small style={styles.hint}>word,partOfSpeech,definition,synonyms,antonyms</small>
-            </div>
-            <div style={styles.uploadBox}>
+            </label>
+            <label style={styles.uploadBox}>
+              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" style={{ marginBottom: 4 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
               <p style={styles.label}>JSON File</p>
-              <input type="file" accept=".json" ref={jsonInputRef} onChange={handleJSONSelect} disabled={loading} style={styles.fileInput} />
+              <input type="file" accept=".json" ref={jsonInputRef} onChange={handleJSONSelect} disabled={loading} style={{ display: 'none' }} />
+              <div style={styles.uploadBtn}>Choose JSON File</div>
               <small style={styles.hint}>{`{"WORD": {MEANINGS: [...]}}`}</small>
-            </div>
+            </label>
           </div>
         )}
       </div>
@@ -552,10 +556,10 @@ const styles = {
   primaryBtn: { background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 600, cursor: 'pointer' },
   successBtn: { background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 600, cursor: 'pointer' },
   uploadGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 },
-  uploadBox: { padding: 16, border: '2px dashed #cbd5e1', borderRadius: 8, textAlign: 'center' },
-  label: { fontWeight: 600, color: '#475569', marginBottom: 8, fontSize: '0.85rem' },
+  uploadBox: { padding: '24px 16px', border: '2px dashed #cbd5e1', borderRadius: 8, textAlign: 'center', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f8fafc' },
+  uploadBtn: { background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '8px 16px', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, margin: '12px 0 8px 0' },
+  label: { fontWeight: 600, color: '#475569', margin: 0, fontSize: '0.9rem' },
   hint: { color: '#94a3b8', fontSize: '0.75rem' },
-  fileInput: { marginBottom: 8 },
   stagedBox: { background: '#f0fdf4', border: '2px solid #bbf7d0', borderRadius: 8, padding: 16 },
   stagedInfo: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   stagedCount: { background: '#16a34a', color: '#fff', padding: '4px 10px', borderRadius: 12, fontSize: '0.8rem' },
