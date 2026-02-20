@@ -46,21 +46,20 @@ const createSuperAdmin = async () => {
         const existing = await Admin.findOne({ contact });
         if (existing) {
             console.log(`Admin with contact ${contact} already exists. Updating...`);
-            existing.isSuperAdmin = true;
+            existing.permissions = Admin.PERMISSIONS;
             existing.passwordHash = passwordHash;
             await existing.save();
-            console.log('Updated to Super Admin with new password.');
+            console.log('Updated to Admin with all permissions and new password.');
         } else {
             const newAdmin = new Admin({
                 name,
                 contact,
-                isSuperAdmin: true,
-                permissions: [],
+                permissions: Admin.PERMISSIONS,
                 passwordHash
             });
 
             await newAdmin.save();
-            console.log('\n✅ Super Admin created successfully!');
+            console.log('\n✅ Admin created successfully!');
             console.log(`   Name: ${name}`);
             console.log(`   Contact: ${contact}`);
             console.log(`\n   Login with contact + password, then verify OTP.`);

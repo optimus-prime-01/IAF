@@ -46,17 +46,7 @@ const adminSchema = new mongoose.Schema(
         },
 
         /**
-         * Whether this admin has super admin privileges.
-         * Super admins can manage other admins.
-         */
-        isSuperAdmin: {
-            type: Boolean,
-            default: false
-        },
-
-        /**
          * Permissions granted to this admin.
-         * Super admins have all permissions automatically.
          */
         permissions: {
             type: [String],
@@ -132,7 +122,6 @@ adminSchema.index({ name: 1 });
  * @returns {boolean}
  */
 adminSchema.methods.hasPermission = function (permission) {
-    if (this.isSuperAdmin) return true;
     return this.permissions.includes(permission);
 };
 
@@ -144,8 +133,7 @@ adminSchema.methods.toSafeObject = function () {
         id: this._id,
         name: this.name,
         contact: this.contact,
-        isSuperAdmin: this.isSuperAdmin,
-        permissions: this.isSuperAdmin ? PERMISSIONS : this.permissions,
+        permissions: this.permissions,
         isVerified: this.isVerified
     };
 };

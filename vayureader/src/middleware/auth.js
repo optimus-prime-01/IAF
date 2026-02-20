@@ -124,7 +124,7 @@ const optionalAuth = async (req, res, next) => {
             // Mirror admin validation used by strict middleware:
             // ensure admin exists and token session is still valid.
             const admin = await Admin.findById(decoded.adminId)
-                .select('name contact isSuperAdmin permissions tokenVersion');
+                .select('name contact permissions tokenVersion');
             if (!admin) {
                 return next();
             }
@@ -139,7 +139,6 @@ const optionalAuth = async (req, res, next) => {
                 adminId: admin._id,
                 name: admin.name,
                 contact: admin.contact,
-                isSuperAdmin: admin.isSuperAdmin,
                 permissions: admin.permissions || []
             };
         }

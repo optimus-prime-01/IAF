@@ -8,21 +8,15 @@ import AdminManager from './components/AdminManager';
 import AdminAuditLogs from './components/AdminAuditLogs';
 import UserAuditLogs from './components/UserAuditLogs';
 
-// Helper to check if user has permission
-const hasPermission = (user, permission) => {
-  if (user.isSuperAdmin) return true;
-  return (user.permissions || []).includes(permission);
-};
-
-export default function Dashboard({ user, onLogout }) {
-  // Set initial view based on first available permission
+export default function Dashboard({ user, permissions = [], onLogout }) {
+  // Set initial view based on first permission in JWT claims
   const getInitialView = () => {
-    if (hasPermission(user, 'manage_pdfs')) return 'pdf';
-    if (hasPermission(user, 'manage_dictionary')) return 'dictionary';
-    if (hasPermission(user, 'manage_abbreviations')) return 'abbreviation';
-    if (hasPermission(user, 'manage_admins')) return 'admins';
-    if (hasPermission(user, 'view_audit')) return 'adminAudit';
-    if (hasPermission(user, 'view_user_audit')) return 'userAudit';
+    if (permissions.includes('manage_pdfs')) return 'pdf';
+    if (permissions.includes('manage_dictionary')) return 'dictionary';
+    if (permissions.includes('manage_abbreviations')) return 'abbreviation';
+    if (permissions.includes('manage_admins')) return 'admins';
+    if (permissions.includes('view_audit')) return 'adminAudit';
+    if (permissions.includes('view_user_audit')) return 'userAudit';
     return 'pdf';
   };
 
@@ -36,6 +30,21 @@ export default function Dashboard({ user, onLogout }) {
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const canAccessCurrentView = (
+      (view === 'pdf' && permissions.includes('manage_pdfs')) ||
+      (view === 'dictionary' && permissions.includes('manage_dictionary')) ||
+      (view === 'abbreviation' && permissions.includes('manage_abbreviations')) ||
+      (view === 'admins' && permissions.includes('manage_admins')) ||
+      (view === 'adminAudit' && permissions.includes('view_audit')) ||
+      (view === 'userAudit' && permissions.includes('view_user_audit'))
+    );
+
+    if (!canAccessCurrentView) {
+      setView(getInitialView());
+    }
+  }, [view, permissions]);
 
   const handleNavigate = (targetView, resourceId) => {
     setView(targetView);
@@ -84,23 +93,23 @@ export default function Dashboard({ user, onLogout }) {
   const renderView = () => {
     switch (view) {
       case 'pdf':
-        return hasPermission(user, 'manage_pdfs') ?
+        return permissions.includes('manage_pdfs') ?
           <PdfManager
             targetPdfId={pdfToHighlight}
             onClearTarget={() => setPdfToHighlight(null)}
           /> : <NoAccess />;
       case 'dictionary':
-        return hasPermission(user, 'manage_dictionary') ? <DictionaryManager /> : <NoAccess />;
+        return permissions.includes('manage_dictionary') ? <DictionaryManager /> : <NoAccess />;
       case 'abbreviation':
-        return hasPermission(user, 'manage_abbreviations') ? <AbbreviationUploader /> : <NoAccess />;
+        return permissions.includes('manage_abbreviations') ? <AbbreviationUploader /> : <NoAccess />;
       case 'admins':
-        return hasPermission(user, 'manage_admins') ? <AdminManager /> : <NoAccess />;
+        return permissions.includes('manage_admins') ? <AdminManager /> : <NoAccess />;
       case 'adminAudit':
-        return hasPermission(user, 'view_audit') ? <AdminAuditLogs onNavigate={handleNavigate} /> : <NoAccess />;
+        return permissions.includes('view_audit') ? <AdminAuditLogs onNavigate={handleNavigate} /> : <NoAccess />;
       case 'userAudit':
-        return hasPermission(user, 'view_user_audit') ? <UserAuditLogs /> : <NoAccess />;
+        return permissions.includes('view_user_audit') ? <UserAuditLogs /> : <NoAccess />;
       default:
-        return <PdfManager />;
+        return <NoAccess />;
     }
   };
 
@@ -122,6 +131,7 @@ export default function Dashboard({ user, onLogout }) {
         currentView={view}
         setView={setView}
         user={user}
+        permissions={permissions}
         onLogout={onLogout}
         isCollapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}

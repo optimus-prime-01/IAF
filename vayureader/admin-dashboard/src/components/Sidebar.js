@@ -23,13 +23,8 @@ const MENU_ITEMS = [
     { key: 'userAudit', label: 'User Audit', icon: Activity, permission: 'view_user_audit' },
 ];
 
-export default function Sidebar({ currentView, setView, user, onLogout, isCollapsed, onToggle }) {
-    const hasPermission = (permission) => {
-        if (user.isSuperAdmin) return true;
-        return (user.permissions || []).includes(permission);
-    };
-
-    const visibleItems = MENU_ITEMS.filter(item => hasPermission(item.permission));
+export default function Sidebar({ currentView, setView, user, permissions = [], onLogout, isCollapsed, onToggle }) {
+    const visibleItems = MENU_ITEMS.filter((item) => permissions.includes(item.permission));
 
     return (
         <motion.div
@@ -117,7 +112,7 @@ export default function Sidebar({ currentView, setView, user, onLogout, isCollap
                                 className="user-info"
                             >
                                 <p className="user-name" title={user.name}>{user.name}</p>
-                                <p className="user-role">{user.isSuperAdmin ? 'Super Admin' : 'Admin'}</p>
+                                <p className="user-role">Administrator</p>
                             </motion.div>
                         )}
                     </AnimatePresence>

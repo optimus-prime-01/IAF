@@ -61,7 +61,7 @@ const authenticateAdmin = async (req, res, next) => {
 
         // Database verification: ensure admin exists and token session is still valid.
         const admin = await Admin.findById(decoded.adminId)
-            .select('name contact isSuperAdmin permissions tokenVersion');
+            .select('name contact permissions tokenVersion');
         if (!admin) {
             return response.unauthorized(res, 'Admin account no longer exists');
         }
@@ -80,7 +80,6 @@ const authenticateAdmin = async (req, res, next) => {
             adminId: admin._id,
             name: admin.name,
             contact: admin.contact,
-            isSuperAdmin: admin.isSuperAdmin,
             permissions: admin.permissions || []
         };
 
@@ -95,25 +94,7 @@ const authenticateAdmin = async (req, res, next) => {
     }
 };
 
-/**
- * Checks if the authenticated admin is a super admin.
- * Must be used after authenticateAdmin.
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
- * @param {Function} next - Next middleware
- */
-const requireSuperAdmin = (req, res, next) => {
-    if (!req.admin) {
-        return response.unauthorized(res, 'Admin authentication required');
-    }
 
-    if (!req.admin.isSuperAdmin) {
-        return response.forbidden(res, 'Super admin access required');
-    }
-
-    next();
-};
 
 /**
  * Creates middleware that checks for a specific permission.
@@ -128,11 +109,6 @@ const requireSuperAdmin = (req, res, next) => {
 const requirePermission = (permission) => (req, res, next) => {
     if (!req.admin) {
         return response.unauthorized(res, 'Admin authentication required');
-    }
-
-    // Super admins have all permissions
-    if (req.admin.isSuperAdmin) {
-        return next();
     }
 
     if (!req.admin.permissions.includes(permission)) {
@@ -184,7 +160,7 @@ const unifiedAuth = async (req, res, next) => {
             } else {
                 // Fix Zombie Admin: Validate admin exists in DB even for unifiedAuth
                 admin = await Admin.findById(decoded.adminId)
-                    .select('name contact isSuperAdmin permissions tokenVersion')
+                    .select('name contact permissions tokenVersion')
                     .lean();
                 if (admin) {
                     await redisClient.set(cacheKey, JSON.stringify(admin), { EX: 60 }); // Cache for 60s
@@ -205,7 +181,6 @@ const unifiedAuth = async (req, res, next) => {
                 adminId: admin._id,
                 name: admin.name,
                 contact: admin.contact,
-                isSuperAdmin: admin.isSuperAdmin,
                 permissions: admin.permissions || []
             };
             req.userType = 'admin';
@@ -262,7 +237,6 @@ const unifiedAuth = async (req, res, next) => {
 
 module.exports = {
     authenticateAdmin,
-    requireSuperAdmin,
     requirePermission,
     unifiedAuth
 };

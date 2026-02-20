@@ -9,15 +9,10 @@ const ALL_TABS = [
   { key: 'userAudit', label: '👁️ User Audit', permission: 'view_user_audit' },
 ];
 
-export default function Navbar({ currentView, setView, user, onLogout }) {
+export default function Navbar({ currentView, setView, user, permissions = [], onLogout }) {
   // Get visible tabs based on permissions
   const getVisibleTabs = () => {
-    if (user.isSuperAdmin) {
-      return ALL_TABS; // Super admin sees all
-    }
-
-    const userPerms = user.permissions || [];
-    return ALL_TABS.filter(tab => userPerms.includes(tab.permission));
+    return ALL_TABS.filter(tab => permissions.includes(tab.permission));
   };
 
   const visibleTabs = getVisibleTabs();
@@ -45,7 +40,6 @@ export default function Navbar({ currentView, setView, user, onLogout }) {
       <div style={navStyles.right}>
         <div style={navStyles.userInfo}>
           <span style={navStyles.userName}>{user.name}</span>
-          {user.isSuperAdmin && <span style={navStyles.superBadge}>Super Admin</span>}
         </div>
         <button onClick={onLogout} style={navStyles.logoutBtn}>Logout</button>
       </div>
@@ -94,14 +88,6 @@ const navStyles = {
     fontSize: '0.9rem',
     color: '#374151',
     fontWeight: 500,
-  },
-  superBadge: {
-    fontSize: '0.7rem',
-    background: '#fef3c7',
-    color: '#92400e',
-    padding: '2px 8px',
-    borderRadius: 10,
-    fontWeight: 600,
   },
   button: {
     background: 'none',

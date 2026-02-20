@@ -15,7 +15,7 @@ const adminController = require('../controllers/admin.controller');
 
 // Middleware
 const { otpLimiter, loginLimiter } = require('../middleware/rateLimiter');
-const { authenticateAdmin, requireSuperAdmin, requirePermission } = require('../middleware/adminAuth');
+const { authenticateAdmin, requirePermission } = require('../middleware/adminAuth');
 const { requireFields, validateObjectId, trimFields } = require('../middleware/validate');
 
 // =============================================================================
@@ -148,7 +148,7 @@ router.get(
 router.post(
     '/users',
     authenticateAdmin,
-    requireSuperAdmin,
+    requirePermission('manage_admins'),
     trimFields,
     requireFields(['name', 'phone_number']),
     adminController.createUser

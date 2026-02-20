@@ -8,6 +8,7 @@
 
 const jwt = require('jsonwebtoken');
 const { jwt: jwtConfig } = require('../config/environment');
+const Admin = require('../models/Admin');
 
 /**
  * Generates a JWT token for a user.
@@ -58,13 +59,13 @@ const generateLifetimeUserToken = (userId, additionalPayload = {}) => {
  */
 const generateAdminToken = (admin) => {
     const tokenVersion = Number.isInteger(admin?.tokenVersion) ? admin.tokenVersion : 0;
+    const permissions = admin?.permissions || [];
 
     const payload = {
         adminId: admin._id,
         name: admin.name,
         contact: admin.contact,
-        isSuperAdmin: admin.isSuperAdmin || false,
-        permissions: admin.permissions || [],
+        permissions,
         tokenVersion,
         type: 'admin'
     };

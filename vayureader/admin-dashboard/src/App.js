@@ -1,28 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Dashboard from './Dashboard';
 import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
 import SecurityQuestionsSetup from './components/SecurityQuestionsSetup';
 import api from './utils/api';
+import {
+  getAdminToken,
+  setAdminToken,
+  clearAdminToken,
+  getPermissionsFromToken
+} from './utils/adminToken';
 
 function App() {
   const [user, setUser] = useState(null);
+  const [adminToken, setAdminTokenState] = useState(() => getAdminToken());
   const [checking, setChecking] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   useEffect(() => {
     const validateSession = async () => {
       const savedUser = localStorage.getItem('admin_info');
-      if (savedUser) {
+      const savedToken = getAdminToken();
+
+      if (savedToken) {
+        setAdminTokenState(savedToken);
+      }
+
+      if (savedUser || savedToken) {
         try {
           // Validate session with backend (cookie will be sent automatically)
           const res = await api.get('/api/admin/me');
-          // Update stored info with latest from server
-          localStorage.setItem('admin_info', JSON.stringify(res.data.data));
-          setUser(res.data.data);
+          const sessionData = res.data.data || {};
+
+          if (sessionData.token) {
+            setAdminToken(sessionData.token);
+            setAdminTokenState(sessionData.token);
+          }
+
+          const { token, ...adminInfo } = sessionData;
+          localStorage.setItem('admin_info', JSON.stringify(adminInfo));
+          setUser(adminInfo);
         } catch {
           // Session invalid, clear localStorage
           localStorage.removeItem('admin_info');
+          clearAdminToken();
+          setAdminTokenState(null);
         }
       }
       setChecking(false);
@@ -30,9 +52,31 @@ function App() {
     validateSession();
   }, []);
 
+  const permissions = useMemo(() => getPermissionsFromToken(adminToken), [adminToken]);
+
+  const handleLoginSuccess = (sessionData) => {
+    if (sessionData?.token) {
+      setAdminToken(sessionData.token);
+      setAdminTokenState(sessionData.token);
+    }
+
+    if (sessionData?.admin) {
+      localStorage.setItem('admin_info', JSON.stringify(sessionData.admin));
+      setUser(sessionData.admin);
+      return;
+    }
+
+    if (sessionData) {
+      localStorage.setItem('admin_info', JSON.stringify(sessionData));
+      setUser(sessionData);
+    }
+  };
+
   const handleLogout = () => {
     api.post('/api/admin/logout').catch(() => { });
     localStorage.removeItem('admin_info');
+    clearAdminToken();
+    setAdminTokenState(null);
     setUser(null);
   };
 
@@ -40,8 +84,16 @@ function App() {
     // Refresh user data to get updated isVerified status
     try {
       const res = await api.get('/api/admin/me');
-      localStorage.setItem('admin_info', JSON.stringify(res.data.data));
-      setUser(res.data.data);
+      const sessionData = res.data.data || {};
+
+      if (sessionData.token) {
+        setAdminToken(sessionData.token);
+        setAdminTokenState(sessionData.token);
+      }
+
+      const { token, ...adminInfo } = sessionData;
+      localStorage.setItem('admin_info', JSON.stringify(adminInfo));
+      setUser(adminInfo);
     } catch {
       handleLogout();
     }
@@ -54,9 +106,9 @@ function App() {
     return (
       <ForgotPassword
         onBack={() => setShowForgotPassword(false)}
-        onSuccess={() => {
+        onSuccess={(sessionData) => {
           setShowForgotPassword(false);
-          window.location.reload(); // Refresh to validate session
+          handleLoginSuccess(sessionData);
         }}
       />
     );
@@ -66,7 +118,7 @@ function App() {
   if (!user) {
     return (
       <Login
-        onLoginSuccess={(admin) => setUser(admin)}
+        onLoginSuccess={handleLoginSuccess}
         onForgotPassword={() => setShowForgotPassword(true)}
       />
     );
@@ -80,7 +132,7 @@ function App() {
   }
 
   // User logged in and verified - show dashboard
-  return <Dashboard user={user} onLogout={handleLogout} />;
+  return <Dashboard user={user} permissions={permissions} onLogout={handleLogout} />;
 }
 
 export default App;

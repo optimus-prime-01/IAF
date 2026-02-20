@@ -127,7 +127,8 @@ const verifyLoginOtp = async (req, res, next) => {
         });
 
         response.success(res, {
-            admin: admin.toSafeObject()
+            admin: admin.toSafeObject(),
+            token
         }, 'Login successful');
     } catch (error) {
         next(error);
@@ -143,9 +144,9 @@ const verifyLoginOtp = async (req, res, next) => {
  */
 const getAllSubAdmins = async (req, res, next) => {
     try {
-        const admins = await Admin.find({ isSuperAdmin: false })
+        const admins = await Admin.find({})
             .sort({ createdAt: -1 })
-            .select('name contact isSuperAdmin permissions isVerified createdBy createdAt updatedAt')
+            .select('name contact permissions isVerified createdBy createdAt updatedAt')
             .lean();
 
         response.success(res, admins);
@@ -179,12 +180,10 @@ const createSubAdmin = async (req, res, next) => {
             : [];
 
         // RBAC Security Check: Prevent privilege escalation
-        // Non-super admins cannot grant permissions they don't possess
-        if (!req.admin.isSuperAdmin) {
-            const hasAllPermissions = validPermissions.every(p => req.admin.permissions.includes(p));
-            if (!hasAllPermissions) {
-                return response.forbidden(res, 'You cannot grant permissions you do not possess');
-            }
+        // Admins cannot grant permissions they don't possess
+        const hasAllPermissions = validPermissions.every(p => req.admin.permissions.includes(p));
+        if (!hasAllPermissions) {
+            return response.forbidden(res, 'You cannot grant permissions you do not possess');
         }
 
         // Hash password
@@ -193,7 +192,6 @@ const createSubAdmin = async (req, res, next) => {
         const newAdmin = new Admin({
             name: sanitizeName(name),
             contact: normalizedContact,
-            isSuperAdmin: false,
             permissions: validPermissions,
             createdBy: req.admin.name,
             passwordHash
@@ -227,9 +225,7 @@ const updateSubAdmin = async (req, res, next) => {
             return response.notFound(res, 'Sub-admin not found');
         }
 
-        if (admin.isSuperAdmin) {
-            return response.forbidden(res, 'Cannot modify super admin permissions');
-        }
+
 
         // Validate permissions
         const validPermissions = permissions && Array.isArray(permissions)
@@ -237,12 +233,10 @@ const updateSubAdmin = async (req, res, next) => {
             : [];
 
         // RBAC Security Check: Prevent privilege escalation
-        // Non-super admins cannot grant permissions they don't possess
-        if (!req.admin.isSuperAdmin) {
-            const hasAllPermissions = validPermissions.every(p => req.admin.permissions.includes(p));
-            if (!hasAllPermissions) {
-                return response.forbidden(res, 'You cannot grant permissions you do not possess');
-            }
+        // Admins cannot grant permissions they don't possess
+        const hasAllPermissions = validPermissions.every(p => req.admin.permissions.includes(p));
+        if (!hasAllPermissions) {
+            return response.forbidden(res, 'You cannot grant permissions you do not possess');
         }
 
         const oldPermissions = admin.permissions;
@@ -278,9 +272,7 @@ const deleteSubAdmin = async (req, res, next) => {
             return response.notFound(res, 'Sub-admin not found');
         }
 
-        if (admin.isSuperAdmin) {
-            return response.forbidden(res, 'Cannot delete super admin');
-        }
+
 
         await Admin.findByIdAndDelete(req.params.id);
 
@@ -409,8 +401,17 @@ const getAllUsers = async (req, res, next) => {
  */
 const getCurrentAdmin = async (req, res, next) => {
     try {
-        // req.admin is populated by authenticateAdmin middleware
-        response.success(res, req.admin);
+        const admin = await Admin.findById(req.admin.adminId);
+        if (!admin) {
+            return response.unauthorized(res, 'Admin account no longer exists');
+        }
+
+        const token = generateAdminToken(admin);
+        response.success(res, {
+            adminId: admin._id,
+            ...admin.toSafeObject(),
+            token
+        });
     } catch (error) {
         next(error);
     }

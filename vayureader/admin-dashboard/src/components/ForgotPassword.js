@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../utils/api';
+import { setAdminToken } from '../utils/adminToken';
 
 const STEPS = {
     ENTER_CONTACT: 1,
@@ -79,13 +80,18 @@ export default function ForgotPassword({ onBack, onSuccess }) {
 
         try {
             // Use the admin reset endpoint
-            await api.post('/api/admin/recovery/reset', {
+            const res = await api.post('/api/admin/recovery/reset', {
                 contact,
                 otp,
                 loginToken,
                 newPassword: password // Send as newPassword
             });
-            onSuccess?.();
+            const { admin, token } = res.data.data || {};
+            if (admin) {
+                localStorage.setItem('admin_info', JSON.stringify(admin));
+            }
+            setAdminToken(token);
+            onSuccess?.({ admin, token });
         } catch (err) {
             setError(err.response?.data?.message || 'Invalid OTP');
         } finally {

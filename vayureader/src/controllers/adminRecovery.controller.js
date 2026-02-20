@@ -102,7 +102,7 @@ const initiateRecovery = async (req, res, next) => {
         }
 
         if (!admin.securityQuestions || admin.securityQuestions.length === 0) {
-            return response.badRequest(res, 'No security questions set for this account. Contact super admin.');
+            return response.badRequest(res, 'No security questions set for this account. Contact an admin.');
         }
 
         // Return only the questions (not answers)
@@ -237,6 +237,7 @@ const resetPassword = async (req, res, next) => {
 
         response.success(res, {
             admin: admin.toSafeObject(),
+            token,
             message: 'Password reset successful'
         });
 

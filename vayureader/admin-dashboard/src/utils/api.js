@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearAdminToken } from './adminToken';
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
 console.log('[API DEBUG] Base URL:', BASE_URL, 'ENV:', process.env.REACT_APP_API_BASE_URL);
@@ -17,6 +18,7 @@ api.interceptors.response.use(
     (error) => {
         if (error.response && (error.response.status === 401)) {
             localStorage.removeItem('admin_info');
+            clearAdminToken();
             if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
                 window.location.href = '/';
             }

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import api from '../utils/api';
 import { useNotifications, NotificationToast } from '../hooks/useNotifications';
+import { setAdminToken } from '../utils/adminToken';
 
 export default function Login({ onLoginSuccess, onForgotPassword }) {
     const [step, setStep] = useState(1); // 1: password, 2: OTP
@@ -110,10 +111,11 @@ export default function Login({ onLoginSuccess, onForgotPassword }) {
                 loginToken,
                 deviceId
             });
-            const { admin } = res.data.data;
+            const { admin, token } = res.data.data;
             // JWT is now stored in HTTP-only cookie by the server
             localStorage.setItem('admin_info', JSON.stringify(admin));
-            onLoginSuccess(admin);
+            setAdminToken(token);
+            onLoginSuccess({ admin, token });
         } catch (err) {
             setError(err.response?.data?.message || 'Invalid OTP');
         } finally {
